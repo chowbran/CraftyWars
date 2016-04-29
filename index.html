@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html data-ng-app="myApp">
+<head>
+  <meta charset="utf-8">
+  <title>HelloWorld</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+  <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+</head>
+
+<body>
+  <h1 id="greeting"></h1>
+  <hr>
+  <div class="container">
+    <div data-ng-controller="TimerCtrl">
+      <div id="datetime">
+        <h1>{{ date.raw | date:'hh mm ss' }}</h1>
+      </div>
+    </div>
+  </div>
+  <hr>
+  <div class="col-lg-12">
+    <div data-ng-controller="MainCtrl">
+      <input type="text" id="txtApiKey" class="form-control" placeholder="API Key" data-ngchange="updateView()" ng-model="apiKey"></input>
+
+      <div class="input-group">
+        <input type="text" id="txtSearch" class="form-control" placeholder="Search...">
+        <span class="input-group-btn">
+          <button data-ng-click="updateView()" class="btn btn-secondary" id="btnSearch" type="button"><span class="glyphicon glyphicon-search"></span></button>
+        </span>
+      </div>
+    </div>
+
+  </div>
+  <br><br>
+  <hr>
+<!--   <div data-ng-controller="MainCtrl">
+    <div ng-repeat="item in items">
+    </div>
+  </div> -->
+
+
+
+  <script src="js/vendors/tether.min.js"></script>
+  <script src="js/vendors/jquery.min.js"></script>
+  <script src="bootstrap/js/bootstrap.min.js"></script>
+  <script src="js/vendors/angular.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
