@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "HelloWorld",
-  "short_name": "HelloWorld",
+  "name": "CraftyWars",
+  "short_name": "CW",
   "description": "",
   "version": "0.0.1",
   "minimum_chrome_version": "38",

@@ -2,7 +2,7 @@
 <html data-ng-app="myApp">
 <head>
   <meta charset="utf-8">
-  <title>HelloWorld</title>
+  <title>Crafty Wars</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
   <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
@@ -31,9 +31,15 @@
       </div>
     </div>
 
-  </div>
-  <br><br>
+  
+  <br>
   <hr>
+  <div data-ng-controller="FilterCtrl">
+  <select class="btn btn-default dropdown-toggle" ng-model="selectedCraft" ng-options="craft.label for craft in crafts">
+  </select>
+  </div>
+ 
+  </div>
 <!--   <div data-ng-controller="MainCtrl">
     <div ng-repeat="item in items">
     </div>
