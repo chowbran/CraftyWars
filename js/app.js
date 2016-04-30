@@ -1,4 +1,4 @@
-var app = angular.module('myApp', ["checklist-model"]);
+var app = angular.module('myApp', ["checklist-model", "ui.multiselect"]);
 
 window.onload = function() {
   var searchButton = document.getElementById('btnSearch');
@@ -6,6 +6,7 @@ window.onload = function() {
   
   document.querySelector('#greeting').innerText =
     'Crafty Wars - A Guild Wars 2 Crafting Calculator';
+
 };
 
 function httpGetAsync(url, callback) {
@@ -19,26 +20,27 @@ function httpGetAsync(url, callback) {
 }
 
 app.controller('MainCtrl', function($scope) {
+  $scope.utils = {};
   var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
   var materialQueryString = "https://api.guildwars2.com/v2/account/materials";
-  $scope.items = [];
-  $scope.apiKey = "";
+  $scope.utils.items = [];
+  $scope.utils.apiKey = "";
 
-  $scope.updateView = function() {
+  $scope.utils.updateView = function() {
     var apikey = temp_key;//document.getElementById('txtApiKey').value;
     console.log(apikey);
     var queryString = materialQueryString + "?access_token=" + apikey;
     httpGetAsync(queryString, (res) => {
-      $scope.items = $.parseJSON(res);
-      console.log($scope.items[0]);
+      $scope.utils.items = $.parseJSON(res);
+      console.log($scope.utils.items[0]);
     });
   };
   
-  $scope.$watch('apiKey', $scope.updateView);
+  $scope.$watch('apiKey', $scope.utils.updateView);
 });
 
 app.controller('TimerCtrl', function($scope, $timeout) {
-    $scope.date = {};
+  $scope.date = {};
   // Update function
   var updateTime = function() {
     $scope.date.raw = new Date();
@@ -50,7 +52,8 @@ app.controller('TimerCtrl', function($scope, $timeout) {
 
 app.controller('FilterCtrl', function($scope) {
   $scope.crafting = {};
-  $scope.crafting.selectedDisciplines = ["Armorsmith"];
+  $scope.crafting.selectModel = [];
+  $scope.crafting.selectedDisciplines = [];
   $scope.crafting.recipeIds = [];
   $scope.crafting.crafts = [
     {"discipline": "Armorsmith"},
@@ -63,6 +66,19 @@ app.controller('FilterCtrl', function($scope) {
     {"discipline": "Tailor"},
     {"discipline": "Weaponsmith"}
   ];
+  $scope.crafting.craftClass = ["weapon", "armor", "trinket", "food", "component", "refinement", "guild", "other"];
+  $scope.crafting.craftType = {
+    "weapon": ["axe", "Dagger", "Focus", "Greatsword", "Hammer", "Harpoon", "LongBow", "Mace", "Pistol", 
+               "Rifle", "Scepter", "Shield", "ShortBow", "Speargun", "Staff", "Sword", "Torch", "Trident", "Warhorn"
+              ],
+    "armor": ["Boots", "Coat", "Gloves", "Helm", "Leggings", "Shoulders"],
+    "trinket": ["Amulet", "Earring", "Ring"],
+    "food": ["Dessert", "Feast", "IngredientCooking", "Meal", "Seasoning", "Snack", "Soup", "Food"],
+    "component": ["Component", "Inscription", "Insignia", "LegendaryComponent"],
+    "refinement": ["Refinement", "RefinementEctoplasm", "RefinementObsidian"],
+    "guild": ["GuildConsumable", "GuildDecoration", "GuildConsumableWvw"],
+    "other": ["Backpack", "Bag", "Bulk", "Consumable", "Dye", "Potion", "UpgradeComponent"]
+  };
 
   var fetchCrafts = function() {
     var craftQueryString = "https://api.guildwars2.com/v2/account/materials";
@@ -108,3 +124,19 @@ app.controller('FilterCtrl', function($scope) {
   };
 });
 
+// Filter to capitalize the first character
+app.filter('capitalize', function() {
+    return function(input) {
+      return (!!input) ? input.charAt(0).toUpperCase() + input.substr(1).toLowerCase() : '';
+    }
+});
+
+// Filter to convert CamelCase to Camel Case (ie Normal Case)
+app.filter('stringify', function() {
+    return function(input) {
+      return input
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, function(str){ return str.toUpperCase(); });
+      
+    }
+});
