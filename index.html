@@ -11,6 +11,7 @@
 <body>
   <h1 id="greeting"></h1>
   <hr>
+  
   <div class="container">
     <div data-ng-controller="TimerCtrl">
       <div id="datetime">
@@ -18,10 +19,12 @@
       </div>
     </div>
   </div>
+  
   <hr>
+  
   <div class="col-lg-12">
     <div data-ng-controller="MainCtrl">
-      <input type="text" id="txtApiKey" class="form-control" placeholder="API Key" data-ngchange="updateView()" ng-model="apiKey"></input>
+      <input type="text" id="txtApiKey" class="form-control" placeholder="API Key" data-ngchange="updateView()" data-ng-model="apiKey"></input>
 
       <div class="input-group">
         <input type="text" id="txtSearch" class="form-control" placeholder="Search...">
@@ -31,26 +34,33 @@
       </div>
     </div>
 
+  </div>
   
-  <br>
-  <hr>
-  <div data-ng-controller="FilterCtrl">
-  <select class="btn btn-default dropdown-toggle" ng-model="selectedCraft" ng-options="craft.label for craft in crafts">
-  </select>
-  </div>
- 
-  </div>
-<!--   <div data-ng-controller="MainCtrl">
-    <div ng-repeat="item in items">
+  <br><hr>
+
+  <div class="col-lg-1">
+    <div data-ng-controller="FilterCtrl">
+      <button data-ng-click="test1()" class="btn btn-secondary" type="button">Debug</button>
+      <form class="form-inline">
+        <div class="checkbox" ng-repeat="craft in crafting.crafts">
+          <input type="checkbox" checklist-model="crafting.selectedDisciplines" checklist-value="craft.discipline"> 
+            {{ craft.discipline }} &nbsp;&nbsp; 
+          </input>
+        </div>
+        <div class="checkbox">
+          <input type="checkbox" ng-click="crafting.updateAllDisciplines($event)" ng-checked="crafting.isAllSelected()"> 
+            Select All
+          </input>
+        </div>
+      </form>
     </div>
-  </div> -->
-
-
+  </div>
 
   <script src="js/vendors/tether.min.js"></script>
   <script src="js/vendors/jquery.min.js"></script>
   <script src="bootstrap/js/bootstrap.min.js"></script>
   <script src="js/vendors/angular.min.js"></script>
+  <script src="js/vendors/checklist-model.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
