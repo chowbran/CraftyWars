@@ -43,12 +43,12 @@
       <button data-ng-click="test1()" class="btn btn-secondary" type="button">Debug</button>
       <form class="form-inline">
         <div class="checkbox" data-ng-repeat="craft in crafting.crafts">
-          <input type="checkbox" checklist-model="crafting.selectedDisciplines" checklist-value="craft.discipline"> 
+          <input type="checkbox" checklist-model="crafting.selectedDisciplinesModel" checklist-value="craft.discipline"> 
             {{ craft.discipline }} &nbsp;&nbsp; 
           </input>
         </div>
         <div class="checkbox">
-          <input type="checkbox" ng-click="crafting.updateAllDisciplines($event)" ng-checked="crafting.isAllSelected()"> 
+          <input type="checkbox" data-ng-click="crafting.updateAllDisciplines($event)" data-ng-checked="crafting.isAllSelected()"> 
             Select All
           </input>
         </div>
@@ -56,13 +56,12 @@
 
       <div class="inline" data-ng-repeat="class in crafting.craftClass">
         <label>&nbsp;&nbsp;  {{class | capitalize }}:  </label>
-        <multiselect ng-model="crafting.selectModel" options="(t | stringify) for t in crafting.craftType[class]" data-multiple="true" scroll-after-rows="5" filter-after-rows="10" max-width="100">
+        <multiselect data-ng-click="crafting.updateSelectedTypes()" data-ng-model="crafting.selectedTypeModels[class]" options="(t | stringify) for t in crafting.craftType[class]" data-multiple="true" scroll-after-rows="5" filter-after-rows="10" max-width="100">
         </multiselect>
       </div>
 
       <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
-
-      {{ crafting.selectModel }}
+      {{ crafting.selectedTypeModels["weapon"] }}
     </div>
   </div>
 
@@ -71,8 +70,11 @@
   <script src="js/vendors/jquery.min.js"></script>
   <script src="bootstrap/js/bootstrap.min.js"></script>
   <script src="js/vendors/angular.min.js"></script>
+  <script src="js/vendors/underscore-min.js"></script>-
   <script src="js/vendors/checklist-model.js"></script>
   <script src="js/vendors/angular-bootstrap-multiselect.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/constants.js"></script>
 </body>
 </html>
