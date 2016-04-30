@@ -46,6 +46,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
                 var changeHandler = attrs.change || angular.noop;
 
                 scope.items = [];
+                scope.items.allSelected = false;
                 scope.header = "Select";
                 scope.multiple = isMultiple;
                 scope.disabled = false;
@@ -215,10 +216,14 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
                             }
                         });
                     }
+
                     modelCtrl.$setViewValue(value);
                 }
 
                 function markChecked(newVal) {
+                    // Update selected flags
+                    scope.items.allSelected = modelCtrl.$modelValue.length === scope.items.length;
+
                     if(!angular.isArray(newVal)) {
                         angular.forEach(scope.items, function(item) {
                             item.checked = false;
@@ -250,6 +255,14 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
                         item.checked = true;
                     });
                     setModelValue(true);
+                };
+
+                scope.toggleCheckAll = function() {
+                    if(scope.items.allSelected) {
+                        scope.uncheckAll();
+                    } else {
+                        scope.checkAll();
+                    }
                 };
 
                 scope.uncheckAll = function() {
@@ -326,6 +339,11 @@ angular.module("multiselect.tpl.html", []).run(["$templateCache", function($temp
             "  </button>\n" +
             "  <ul class=\"dropdown-menu\" style=\"margin-bottom:30px;padding-left:5px;padding-right:5px;\" ng-style=\"ulStyle\">\n" +
             "    <input ng-show=\"items.length > filterAfterRows\" ng-model=\"filter\" style=\"padding: 0px 3px;margin-right: 15px; margin-bottom: 4px;\" placeholder=\"Type to filter options\">" +
+            "    <li data-stopPropagation=\"true\">\n" +
+            "      <a ng-click=\"toggleCheckAll()\" style=\"padding:3px 10px;cursor:pointer;\">\n" +
+            "        <i class=\"glyphicon\" ng-class=\"{'glyphicon-ok': items.allSelected, 'empty': !items.allSelected}\"></i> Select All</a>\n" +
+            "    </li>\n" +
+            "    <li class=\"divider\"></li>" +
             "    <li data-stopPropagation=\"true\" ng-repeat=\"i in items | filter:filter\">\n" +
             "      <a ng-click=\"select($event, i)\" style=\"padding:3px 10px;cursor:pointer;\">\n" +
             "        <i class=\"glyphicon\" ng-class=\"{'glyphicon-ok': i.checked, 'empty': !i.checked}\"></i> {{i.label}}</a>\n" +

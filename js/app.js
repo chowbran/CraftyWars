@@ -77,6 +77,11 @@ app.controller('FilterCtrl', function($scope, crafting, _) {
     });
   };
 
+  $scope.crafting.example2model = []; 
+  $scope.crafting.example2data = [
+    {id: 1, label: "David"},
+    {id: 2, label: "Jhon"}];
+
   var fetchCrafts = function() {
     var craftQueryString = "https://api.guildwars2.com/v2/account/materials";
     var queryString = craftQueryString + "?access_token=" + apikey;
