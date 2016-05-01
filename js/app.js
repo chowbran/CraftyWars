@@ -15,33 +15,116 @@ window.onload = function() {
 };
 
 function httpGetAsync(url, callback) {
-    var req = new XMLHttpRequest();
-    req.onreadystatechange = function() {
-        if (req.readyState == 4 && req.status == 200)
-            callback(req.responseText);
-    };
-    req.open("GET", url, true); // true for asynchronous
-    req.send(null);
+  var req = new XMLHttpRequest();
+  req.onreadystatechange = function() {
+      if (req.readyState == 4 && req.status == 200)
+          callback(req.responseText);
+  };
+  req.open("GET", url, true); // true for asynchronous
+  req.send(null);
 }
 
+app.service('utilities', function () {
+  var utils = {
+    'apiKey': ""
+  };
+
+  return {
+      getUtils: function () {
+          return utils;
+      },
+      setUtils: function(value) {
+          utils = value;
+      }
+  };
+});
+
+app.service('account', function () {
+  var items = [];
+  var bankItems = [];
+
+  var characters = {};
+  var arrayOfCharacters = [];
+
+  return {
+      getItems: function() {
+          return items;
+      },
+      setItems: function(item) {
+          items = item;
+      },
+      getBankItems: function() {
+          return items;
+      },
+      setBankItems: function(item) {
+          bankItems = item;
+      },
+      getArrayOfCharacters: function() {
+        return arrayOfCharacters;
+      },
+      getCharacters: function() {
+        return characters;
+      },
+      addCharacter: function(character) {
+        characters[character] = null;
+        if (arrayOfCharacters.indexOf(character)) {
+          arrayOfCharacters.push(character);
+        }
+      },
+      clearCharacters: function() {
+        characters = {};
+        arrayOfCharacters = [];
+      }
+  };
+});
+
 /***********************************************Main Controller****************************************/
-app.controller('MainCtrl', function($scope) {
-  $scope.utils = {};
+app.controller('MainCtrl', function($scope, endpoints, utilities, account) {
   var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
-  var materialQueryString = "https://api.guildwars2.com/v2/account/materials";
+  $scope.utils = {};
   $scope.utils.items = [];
-  $scope.utils.apiKey = "";
+  $scope.utils.apiKey = temp_key;
+  // utilities.setUtils({'apiKey': $scope.utils.apiKey});
+  utilities.getUtils()['apiKey'] = $scope.utils.apiKey;
 
   $scope.utils.updateView = function() {
-    var apikey = temp_key;//document.getElementById('txtApiKey').value;
-    console.log(apikey);
-    var queryString = materialQueryString + "?access_token=" + apikey;
-    httpGetAsync(queryString, (res) => {
-      $scope.utils.items = $.parseJSON(res);
-      console.log($scope.utils.items[0]);
-    });
+    console.log($scope.utils.apiKey);
+    var query = endpoints.v2Url + endpoints.characters + endpoints.authParam + $scope.utils.apiKey;
+    // httpGetAsync(query, (res) => {
+    //   $scope.utils.items = $.parseJSON(res);
+    //   console.log($scope.utils.items);
+    // });
+    updateBank();
+    updateCharacters();
   };
-  
+
+  var updateCharacters = function() {
+    var query = endpoints.v2Url + endpoints.characters + endpoints.authParam + $scope.utils.apiKey;
+    account.clearCharacters();
+
+    httpGetAsync(query, (res) => {
+      $.parseJSON(res).forEach((character) => {
+        account.addCharacter(character);
+      });
+      console.log(account.getCharacters());
+    });
+  }
+
+  var updateBank = function() {
+    var query = endpoints.v2Url + endpoints.accountBank + endpoints.authParam + $scope.utils.apiKey;
+    httpGetAsync(query, (res) => {
+      var bankItems = $.parseJSON(res);
+      account.setItems(bankItems.filter((item) => {
+        return !!item && (!item.hasOwnProperty("binding") || item["binding"] === "Account");
+      }).map((item) => {
+        return {
+          "id": item["id"],
+          "count": item["count"]
+        };
+      }));
+    });
+  }
+
   $scope.$watch('apiKey', $scope.utils.updateView);
 });
 
@@ -58,9 +141,9 @@ app.controller('TimerCtrl', function($scope, $timeout) {
 });
 
 /************************Filter Controller*************************************/
-app.controller('FilterCtrl', function($scope, crafting, _) {
-  var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
-  var apiKey = temp_key;
+app.controller('FilterCtrl', function($scope, crafting, endpoints, utilities, account, _) {
+  var apiKey = utilities.getUtils()["apiKey"];
+  console.log(apiKey);
   $scope.crafting = crafting;
   $scope.crafting.selectedTypes = [];
   $scope.crafting.selectedTypeModels = {};
@@ -76,15 +159,14 @@ app.controller('FilterCtrl', function($scope, crafting, _) {
   };
 
   var fetchCrafts = function() {
-    var craftQueryString = "https://api.guildwars2.com/v2/account/materials";
-    var queryString = craftQueryString + "?access_token=" + apiKey;
+    var queryString = endpoints.v2Url + endpoints.accountMaterials + endpoints.authParam + apiKey;
     httpGetAsync(queryString, (res) => {
       $scope.crafting.items = $.parseJSON(res);
     });
   };
 
   var fetchRecipes = function() {
-    var recipeQueryString = "https://api.guildwars2.com/v2/recipes";
+    var recipeQueryString = endpoints.v2Url + endpoints.recipes;
     var queryString = recipeQueryString;
     httpGetAsync(queryString, (res) => {
       $scope.crafting.recipeIds = $.parseJSON(res);

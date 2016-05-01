@@ -24,3 +24,16 @@ app.constant('crafting', {
     "other": ["Backpack", "Bag", "Bulk", "Consumable", "Dye", "Potion", "UpgradeComponent"]
   }
 });
+
+app.constant('endpoints', {
+  v1Url: "https://api.guildwars2.com/v1/",
+  v2Url: "https://api.guildwars2.com/v2/",
+  accountMaterials: "account/materials",
+  accountBank: "account/bank",
+  accountInventory: "account/inventory",
+  accountWallet: "account/wallet",
+  characters: "characters",
+  recipes: "recipes",
+  recipesSearch: "recipes/search",
+  authParam: "?access_token=", 
+});
