@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html data-ng-app="myApp">
 <head>
-  <meta charset="utf-8">
+<!--   <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *"> -->
+
   <title>Crafty Wars</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
@@ -33,10 +34,9 @@
         </span>
       </div>
     </div>
-
   </div>
   
-  <br><hr>
+  <hr>
 
   <div class="col-lg-1">
     <div data-ng-controller="FilterCtrl">
@@ -60,9 +60,48 @@
         </multiselect>
 
       </div>
-<!--         <div ng-dropdown-multiselect="" options="data in crafting.example2data" selected-model="crafting.example2model"></div> -->
-      <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
-      {{ crafting.selectedTypeModels["weapon"] }}
+
+      <br>
+      <div>
+        {{ crafting.selectedTypeModels["weapon"] }}
+        {{ crafting.recipeIds }}
+
+        <table st-safe-src="crafting.items" st-table="displayedCollection" class="table table-striped">
+            <thead>
+              <tr>
+                <th st-ratio="40" st-sort="id">id</th>
+                <th st-ratio="40">category</th>
+                <th st-ratio="20">count</th>
+              </tr>
+              <th>
+                <input st-search="id" placeholder="search id" class="input-sm form-control" type="search"/>
+              </th>
+              <th>
+                <input st-search="category" placeholder="search category" class="input-sm form-control" type="search"/>
+              </th>
+              <th>
+                <input st-search="count" placeholder="search count" class="input-sm form-control" type="search"/>
+              </th>
+            </thead>
+            <tbody>
+              <tr ng-repeat="item in displayedCollection">
+                <td>{{item.id}}</td>
+                <td>{{item.category}}</td>
+                <td>{{item.count}}</td>
+              </tr>
+            </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" class="text-center">
+                <div st-items-by-page="10" st-pagination="" st-template="js/vendors/smart-table/pagination.custom.html"></div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- {{ crafting.items }} -->
+      </div>
+<div ng-show="isLoading" class="loading-indicator"></div>
     </div>
   </div>
 
@@ -71,10 +110,13 @@
   <script src="js/vendors/jquery.min.js"></script>
   <script src="bootstrap/js/bootstrap.min.js"></script>
   <script src="js/vendors/angular.min.js"></script>
+  <script src="js/vendors/smart-table/smart-table.min.js"></script>
   <script src="js/vendors/underscore-min.js"></script>-
   <script src="js/vendors/checklist-model.js"></script>
   <script src="js/vendors/angular-bootstrap-multiselect.js"></script>
+  <script src="js/vendors/lrInfiniteScrollPlugin.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/vendors/smart-table/pageSelect.directive.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/constants.js"></script>
 </body>

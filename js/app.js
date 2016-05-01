@@ -1,7 +1,8 @@
 var app = angular.module('myApp', [
   "checklist-model", 
   "ui.multiselect",
-  "underscore"
+  "underscore",
+  "smart-table"
   ]);
 
 window.onload = function() {
@@ -56,38 +57,29 @@ app.controller('TimerCtrl', function($scope, $timeout) {
   updateTime();
 });
 
-/***********************************************Filter Controller****************************************/
+/************************Filter Controller*************************************/
 app.controller('FilterCtrl', function($scope, crafting, _) {
+  var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
+  var apiKey = temp_key;
   $scope.crafting = crafting;
   $scope.crafting.selectedTypes = [];
   $scope.crafting.selectedTypeModels = {};
   $scope.crafting.selectedDisciplinesModel = [];
   $scope.crafting.recipeIds = [];
-  
 
-  $scope.crafting.craftClass.forEach((cls) => {
-    $scope.crafting.selectedTypeModels[cls] = [];
-  });
-
-  // $scope.crafting.selectedTypeModel = [];
   $scope.crafting.updateSelectedTypes = function () {
     $scope.crafting.selectedTypes.length = 0;
     $scope.crafting.craftClass.forEach((cls) => {
-      $scope.crafting.selectedTypes = _.union($scope.crafting.selectedTypes, $scope.crafting.selectedTypeModels[cls]);
+      $scope.crafting.selectedTypes = 
+        _.union($scope.crafting.selectedTypes, $scope.crafting.selectedTypeModels[cls]);
     });
   };
 
-  $scope.crafting.example2model = []; 
-  $scope.crafting.example2data = [
-    {id: 1, label: "David"},
-    {id: 2, label: "Jhon"}];
-
   var fetchCrafts = function() {
     var craftQueryString = "https://api.guildwars2.com/v2/account/materials";
-    var queryString = craftQueryString + "?access_token=" + apikey;
+    var queryString = craftQueryString + "?access_token=" + apiKey;
     httpGetAsync(queryString, (res) => {
-      $scope.items = $.parseJSON(res);
-      console.log($scope.items[0]);
+      $scope.crafting.items = $.parseJSON(res);
     });
   };
 
@@ -95,7 +87,8 @@ app.controller('FilterCtrl', function($scope, crafting, _) {
     var recipeQueryString = "https://api.guildwars2.com/v2/recipes";
     var queryString = recipeQueryString;
     httpGetAsync(queryString, (res) => {
-      $scope.recipeIds = $.parseJSON(res);
+      $scope.crafting.recipeIds = $.parseJSON(res);
+      console.log($scope.crafting.recipeIds)
     });
   };
 
@@ -123,5 +116,9 @@ app.controller('FilterCtrl', function($scope, crafting, _) {
   };
 
   fetchRecipes();
+  fetchCrafts();
+
+  // console.log($scope.crafting.recipeIds)
+  // console.log($scope.crafting.recipeIds)
 });
 

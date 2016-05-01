@@ -16,7 +16,7 @@
       ]
     }
   },
-  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "content_security_policy": "script-src 'self' http://xxxx 'unsafe-inline'; object-src 'self'",
   "web_accessible_resources": [
     "bootstrap/fonts/*"
   ]
