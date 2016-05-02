@@ -3,26 +3,39 @@ var app = angular.module('myApp', [
   "ui.multiselect",
   "underscore",
   "smart-table"
-  ]);
+]);
 
-window.onload = function() {
-  var searchButton = document.getElementById('btnSearch');
-  var searchText = document.getElementById('txtSearch');
-  
-  document.querySelector('#greeting').innerText =
-    'Crafty Wars - A Guild Wars 2 Crafting Calculator';
+app.run(function($rootScope, endpoints, _) {
+  $rootScope.gw2 = {};
+  $rootScope.gw2.recipes = [];
+  $rootScope.gw2.recipeIds = [];
 
-};
+  var fetchRecipes = function() {
+    var query = endpoints.v2Url + endpoints.recipes;
+    httpGetAsync(query, (res) => {
+      $rootScope.gw2.recipes = [];
+      $rootScope.gw2.recipeIds = $.parseJSON(res);
 
-function httpGetAsync(url, callback) {
-  var req = new XMLHttpRequest();
-  req.onreadystatechange = function() {
-      if (req.readyState == 4 && req.status == 200)
-          callback(req.responseText);
+      var idsPerChunk = endpoints.idsParamLimit;
+      var chunks = Math.ceil($rootScope.gw2.recipeIds.length / idsPerChunk);
+      var chunkArrays = [];
+      var i, j;
+      for (i = 0, j = $rootScope.gw2.recipeIds.length; i<j; i+=idsPerChunk) {
+        chunkArrays.push($rootScope.gw2.recipeIds.slice(i,i+idsPerChunk));
+      }
+
+      chunkArrays.forEach((chunkArray) => {
+        var newQuery = query + endpoints.idsParam + chunkArray.join();
+        httpGetAsync(newQuery, (res) => {
+          var arr = $.parseJSON(res);
+          $rootScope.gw2.recipes = _.union($rootScope.gw2.recipes, arr);
+        });
+      });
+    });
   };
-  req.open("GET", url, true); // true for asynchronous
-  req.send(null);
-}
+
+  fetchRecipes();
+});
 
 app.service('utilities', function () {
   var utils = {
@@ -108,6 +121,7 @@ app.controller('MainCtrl', function($scope, endpoints, utilities, account) {
       });
       console.log(account.getCharacters());
     });
+
   }
 
   var updateBank = function() {
@@ -148,7 +162,6 @@ app.controller('FilterCtrl', function($scope, crafting, endpoints, utilities, ac
   $scope.crafting.selectedTypes = [];
   $scope.crafting.selectedTypeModels = {};
   $scope.crafting.selectedDisciplinesModel = [];
-  $scope.crafting.recipeIds = [];
 
   $scope.crafting.updateSelectedTypes = function () {
     $scope.crafting.selectedTypes.length = 0;
@@ -159,21 +172,11 @@ app.controller('FilterCtrl', function($scope, crafting, endpoints, utilities, ac
   };
 
   var fetchCrafts = function() {
-    var queryString = endpoints.v2Url + endpoints.accountMaterials + endpoints.authParam + apiKey;
-    httpGetAsync(queryString, (res) => {
+    var query = endpoints.v2Url + endpoints.accountMaterials + endpoints.authParam + apiKey;
+    httpGetAsync(query, (res) => {
       $scope.crafting.items = $.parseJSON(res);
     });
   };
-
-  var fetchRecipes = function() {
-    var recipeQueryString = endpoints.v2Url + endpoints.recipes;
-    var queryString = recipeQueryString;
-    httpGetAsync(queryString, (res) => {
-      $scope.crafting.recipeIds = $.parseJSON(res);
-      console.log($scope.crafting.recipeIds)
-    });
-  };
-
 
   $scope.test1 = function() {
     console.log($scope.crafting.selectedDisciplinesModel);
@@ -197,10 +200,6 @@ app.controller('FilterCtrl', function($scope, crafting, endpoints, utilities, ac
     return $scope.crafting.crafts.length === $scope.crafting.selectedDisciplinesModel.length;
   };
 
-  fetchRecipes();
   fetchCrafts();
-
-  // console.log($scope.crafting.recipeIds)
-  // console.log($scope.crafting.recipeIds)
 });
 

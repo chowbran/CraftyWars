@@ -36,4 +36,6 @@ app.constant('endpoints', {
   recipes: "recipes",
   recipesSearch: "recipes/search",
   authParam: "?access_token=", 
+  idsParam: "?ids=",
+  idsParamLimit: 200
 });
