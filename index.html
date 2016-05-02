@@ -33,10 +33,12 @@
           <button data-ng-click="utils.updateView()" class="btn btn-secondary" id="btnSearch" type="button"><span class="glyphicon glyphicon-search"></span></button>
         </span>
       </div>
+      <hr>
+      <button data-ng-click="utils.saveLocal()" class="btn btn-secondary" type="button">Save to local</button>
+      <button data-ng-click="utils.clearLocal()" class="btn btn-secondary" type="button">Clear local</button>
     </div>
   </div>
   
-  <hr>
 
   <div class="col-lg-1">
     <div data-ng-controller="FilterCtrl">

@@ -16,3 +16,9 @@ function httpGetAsync(url, callback) {
   req.open("GET", url, true); // true for asynchronous
   req.send(null);
 }
+
+function test3(arr) {
+  chrome.storage.sync.get("recipes", function(result) {
+    chrome.storage.local.set({"recipes": _.union(result["recipes"], arr)});
+  });
+}

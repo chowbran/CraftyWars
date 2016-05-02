@@ -12,7 +12,7 @@ app.run(function($rootScope, endpoints, _) {
   $rootScope.gw2.recipes = [];
   $rootScope.gw2.recipeIds = [];
 
-  var fetchRecipes = function() {
+  var fetchRecipesAndItems = function() {
     var query = endpoints.v2Url + endpoints.recipes;
     httpGetAsync(query, (res) => {
       $rootScope.gw2.recipes = [];
@@ -28,11 +28,12 @@ app.run(function($rootScope, endpoints, _) {
 
       chunkArrays.forEach((chunkArray) => {
         var newQuery = query + endpoints.idsParam + chunkArray.join();
-        var recipeItemIds = [];
         httpGetAsync(newQuery, (res) => {
           var arr = $.parseJSON(res);
+          var recipeItemIds = [];
+          var diffRecipes = _.difference(arr, $rootScope.gw2.recipes);
           $rootScope.gw2.recipes = _.union($rootScope.gw2.recipes, arr);
-          
+
           recipeItemIds = arr.map((recipe) => {
             return recipe["ingredients"].map((ingredient) => {
               return ingredient["item_id"];
@@ -52,30 +53,8 @@ app.run(function($rootScope, endpoints, _) {
     });
   };
 
-  // var fetchItems = function() {
-  //   var query = endpoints.v2Url + endpoints.items;
-  //   httpGetAsync(query, (res) => {
-  //     $rootScope.gw2.items = [];
-  //     $rootScope.gw2.itemIds = $.parseJSON(res);
-
-  //     var idsPerChunk = endpoints.idsParamLimit;
-  //     var chunks = Math.ceil($rootScope.gw2.recipeIds.length / idsPerChunk);
-  //     var chunkArrays = [];
-  //     var i, j;
-  //     for (i = 0, j = $rootScope.gw2.recipeIds.length; i<j; i+=idsPerChunk) {
-  //       chunkArrays.push($rootScope.gw2.recipeIds.slice(i,i+idsPerChunk));
-  //     }
-
-  //     chunkArrays.forEach((chunkArray) => {
-  //       var newQuery = query + endpoints.idsParam + chunkArray.join();
-  //       console.log(chunkArray.length);
-  //     });
-  //     console.log($rootScope.gw2.items);
-  //   });
-  // };
-
   var fetchItemsById = function(itemIds) {
-    var query = endpoints.v2Url + endpoints.items;
+    var baseQuery = endpoints.v2Url + endpoints.items;
     var diffItemIds = _.difference(itemIds, $rootScope.gw2.itemIds);
     $rootScope.gw2.itemIds = _.union($rootScope.gw2.itemIds, diffItemIds);
 
@@ -88,17 +67,38 @@ app.run(function($rootScope, endpoints, _) {
     }
 
     chunkArrays.forEach((chunkArray) => {
-      var newQuery = query + endpoints.idsParam + chunkArray.join();
+      var query = baseQuery + endpoints.idsParam + chunkArray.join();
 
-      httpGetAsync(newQuery, (res) => {
+      httpGetAsync(query, (res) => {
         var itemArr = $.parseJSON(res);
         $rootScope.gw2.items = _.union($rootScope.gw2.items, itemArr);
-        console.log($rootScope.gw2.items.length);
       });
     });
   };
-  fetchRecipes();
-  // fetchItems();
+
+  chrome.storage.local.get("recipes", function(recipes) {
+    chrome.storage.local.get("items", function(items) {
+      if ((items["items"] === undefined) || (recipes["recipes"] === undefined)) {
+        chrome.storage.local.set({
+          "recipes": [],
+          "items": []
+        }, () => {
+          fetchRecipesAndItems();
+        });
+        console.log("Fetched from server");
+      } else {
+        $rootScope.gw2.recipes = recipes["recipes"];
+        $rootScope.gw2.items = items["items"];
+        $rootScope.gw2.recipesIds = $rootScope.gw2.recipes.map((recipe) => {
+          return recipes["id"];
+        });
+        $rootScope.gw2.itemIds = $rootScope.gw2.items.map((item) => {
+          return item["id"];
+        });
+        console.log("Loaded from local storage");    
+      }
+    });
+  });
 });
 
 app.service('utilities', function () {
@@ -156,7 +156,7 @@ app.service('account', function () {
 });
 
 /***********************************************Main Controller****************************************/
-app.controller('MainCtrl', function($scope, endpoints, utilities, account) {
+app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, account) {
   var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
   $scope.utils = {};
   $scope.utils.items = [];
@@ -200,6 +200,23 @@ app.controller('MainCtrl', function($scope, endpoints, utilities, account) {
           "count": item["count"]
         };
       }));
+    });
+  }
+
+  $scope.utils.saveLocal = function() {
+    chrome.storage.local.clear(() => {
+      chrome.storage.local.set({
+        "recipes": $rootScope.gw2.recipes,
+        "items": $rootScope.gw2.items
+      }, () => {
+        console.log("save successful")
+      });
+    });
+  }
+
+  $scope.utils.clearLocal = function() {
+    chrome.storage.local.clear(() => {
+      console.log("Clear successful");
     });
   }
 
