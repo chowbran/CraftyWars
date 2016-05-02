@@ -33,6 +33,7 @@ app.constant('endpoints', {
   accountInventory: "account/inventory",
   accountWallet: "account/wallet",
   characters: "characters",
+  items: "items",
   recipes: "recipes",
   recipesSearch: "recipes/search",
   authParam: "?access_token=", 

@@ -7,6 +7,8 @@ var app = angular.module('myApp', [
 
 app.run(function($rootScope, endpoints, _) {
   $rootScope.gw2 = {};
+  $rootScope.gw2.items = [];
+  $rootScope.gw2.itemIds = [];
   $rootScope.gw2.recipes = [];
   $rootScope.gw2.recipeIds = [];
 
@@ -26,15 +28,77 @@ app.run(function($rootScope, endpoints, _) {
 
       chunkArrays.forEach((chunkArray) => {
         var newQuery = query + endpoints.idsParam + chunkArray.join();
+        var recipeItemIds = [];
         httpGetAsync(newQuery, (res) => {
           var arr = $.parseJSON(res);
           $rootScope.gw2.recipes = _.union($rootScope.gw2.recipes, arr);
+          
+          recipeItemIds = arr.map((recipe) => {
+            return recipe["ingredients"].map((ingredient) => {
+              return ingredient["item_id"];
+            });
+          });
+
+          // Flatten array
+          recipeItemIds = [].concat.apply([], recipeItemIds);
+
+          recipeItemIds = _.union(arr.map((recipe) => {
+            return recipe["output_item_id"];
+          }), recipeItemIds);
+
+          fetchItemsById(recipeItemIds);
         });
       });
     });
   };
 
+  // var fetchItems = function() {
+  //   var query = endpoints.v2Url + endpoints.items;
+  //   httpGetAsync(query, (res) => {
+  //     $rootScope.gw2.items = [];
+  //     $rootScope.gw2.itemIds = $.parseJSON(res);
+
+  //     var idsPerChunk = endpoints.idsParamLimit;
+  //     var chunks = Math.ceil($rootScope.gw2.recipeIds.length / idsPerChunk);
+  //     var chunkArrays = [];
+  //     var i, j;
+  //     for (i = 0, j = $rootScope.gw2.recipeIds.length; i<j; i+=idsPerChunk) {
+  //       chunkArrays.push($rootScope.gw2.recipeIds.slice(i,i+idsPerChunk));
+  //     }
+
+  //     chunkArrays.forEach((chunkArray) => {
+  //       var newQuery = query + endpoints.idsParam + chunkArray.join();
+  //       console.log(chunkArray.length);
+  //     });
+  //     console.log($rootScope.gw2.items);
+  //   });
+  // };
+
+  var fetchItemsById = function(itemIds) {
+    var query = endpoints.v2Url + endpoints.items;
+    var diffItemIds = _.difference(itemIds, $rootScope.gw2.itemIds);
+    $rootScope.gw2.itemIds = _.union($rootScope.gw2.itemIds, diffItemIds);
+
+    var idsPerChunk = endpoints.idsParamLimit;
+    var chunks = Math.ceil(diffItemIds.length / idsPerChunk);
+    var chunkArrays = [];
+    var i, j;
+    for (i = 0, j = diffItemIds.length; i<j; i+=idsPerChunk) {
+      chunkArrays.push(diffItemIds.slice(i,i+idsPerChunk));
+    }
+
+    chunkArrays.forEach((chunkArray) => {
+      var newQuery = query + endpoints.idsParam + chunkArray.join();
+
+      httpGetAsync(newQuery, (res) => {
+        var itemArr = $.parseJSON(res);
+        $rootScope.gw2.items = _.union($rootScope.gw2.items, itemArr);
+        console.log($rootScope.gw2.items.length);
+      });
+    });
+  };
   fetchRecipes();
+  // fetchItems();
 });
 
 app.service('utilities', function () {
