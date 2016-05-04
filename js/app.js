@@ -104,100 +104,85 @@ app.service('LoadService', function($rootScope, endpoints, _) {
 });
 
 app.service('utilities', function () {
-  var utils = {
-    'apiKey': ""
-  };
+  var apiKey = "";
 
-  return {
-      getUtils: function () {
-          return utils;
-      },
-      setUtils: function(value) {
-          utils = value;
-      }
-  };
-});
+  this.getApiKey = function() {
+    return apiKey;
+  }
 
-app.factory("Inventory", function() {
-  var inventory = {};
-
-  return {
-    addCharacter: function(characterId) {
-      inventory[characterId] = {};
-    },
-    setInventoryByCharacter: function(characterId, items) {
-      inventory[characterId] = items;
-    },
-    getInventoryByCharacter: function(characterId) {
-      return inventory[characterId];
-    },
-    clearCharacters: function() {
-      inventory = {};
-    }
+  this.setApiKey = function(value) {
+    apiKey = value;
   }
 });
 
-app.factory("MaterialStorage", function() {
-  var items = [];
-
-  return {
-    getItems: function() {
-      return items;
-    },
-    addItems: function(newItems) {
-      items = _.union(items, newItems);
-    },
-    addItem: function(item) {
-      items.push(item);
-    }
-  }
-});
-
-app.factory("Bank", function() {
-  var items = [];
-
-  return {
-    getItems: function() {
-        return items;
-    },
-    addItems: function(newItems) {
-      items = _.union(items, newItems);
-    },
-    addItem: function(item) {
-      items.push(item);
-    }
-  }
-});
-
-app.factory("AccountStorage", function(_) {
-  var items = [];
-
-  return {
-    getItems: function() {
-      return items;
-    },
-    addItems: function(newItems) {
-      items = _.union(items, newItems);
-    },
-    addItem: function(item) {
-      items.push(item);
-    }
+app.factory("ItemCollection", function() {
+  var ItemCollection = function() {
+    this.items = [];
   };
+
+  ItemCollection.prototype.getItems = function() {
+    return this.items;
+  };
+  ItemCollection.prototype.addItems = function(items) {
+    this.items = _.union(this.items, items);
+  };
+  ItemCollection.prototype.addItem = function(item) {
+    this.items.push(item);
+  };
+  ItemCollection.prototype.getItemById = function() {
+
+  };
+
+  return ItemCollection;
 });
 
-app.service("LoadAccountService", function($rootScope, utilities, endpoints, MaterialStorage, Bank, Inventory) {
+app.factory("Inventory", function(ItemCollection) {
+  var Inventory = function() {
+    this.inventory = {};
+  };
+
+  Inventory.prototype.addCharacter = function(characterId) {
+    inventory[characterId] = new ItemCollection();
+  };
+  Inventory.prototype.addItemByCharacter = function(characterId, item) {
+    inventory[characterId].addItem(item);
+  };
+  Inventory.prototype.addItemsByCharacter = function(characterId, items) {
+    inventory[characterId].addItems(items);
+  };
+  Inventory.prototype.getItemsByCharacter = function(characterId) {
+    return inventory[characterId].getItems();
+  };
+  Inventory.prototype.clearCharacters = function() {
+    inventory = {};
+  };
+
+  return Inventory;
+});
+
+app.service("UserItems", function(ItemCollection, Inventory) {
+  var bank = new ItemCollection();
+  var materialStorage = new ItemCollection();
+  var inventory = new Inventory();
+
+  this.Bank = bank;
+  this.MaterialStorage = materialStorage;
+  this.Inventory = inventory;
+});
+
+app.service("LoadAccountService", function($rootScope, utilities, endpoints, UserItems) {
   this.updateCharacters = function() {
     var query = endpoints.v2Url + endpoints.characters 
       + endpoints.authParam 
-      + utilities.getUtils()['apiKey']
+      + utilities.getApiKey()
       + "&" + endpoints.pageParam + "0";
-    Inventory.clearCharacters();
+    UserItems.Inventory.clearCharacters();
 
     httpGetAsync(query, (res) => {
       console.log(query);
       characters = $.parseJSON(res);
       characters.forEach((character) => {
-        Inventory.addCharacter(character["name"])
+        UserItems.Inventory.addCharacter(character["name"])
       });
 
       updateBags(characters);
@@ -209,7 +194,7 @@ app.service("LoadAccountService", function($rootScope, utilities, endpoints, Mat
       character["bags"].forEach((bag) => {
         if (!!bag) {
           var inventory = bag["inventory"];
-          Inventory.setInventoryByCharacter(character["name"], inventory.filter((item) => {
+          UserItems.Inventory.addItemsByCharacter(character["name"], inventory.filter((item) => {
             return !!item && (!item.hasOwnProperty("binding") || item["binding"] === "Account");
           }).map((item) => {
             return {
@@ -225,10 +210,10 @@ app.service("LoadAccountService", function($rootScope, utilities, endpoints, Mat
   this.updateMaterialStorage = function() {
     var query = endpoints.v2Url + endpoints.accountMaterials 
       + endpoints.authParam 
-      + utilities.getUtils()['apiKey'];
+      + utilities.getApiKey();
     httpGetAsync(query, (res) => {
       var craftingItems = $.parseJSON(res);
-      MaterialStorage.addItems(craftingItems.map((item) => {
+      UserItems.MaterialStorage.addItems(craftingItems.map((item) => {
         return {
           "id": item["id"],
           "count": item["count"]
@@ -240,10 +225,10 @@ app.service("LoadAccountService", function($rootScope, utilities, endpoints, Mat
   this.updateBank = function() {
     var query = endpoints.v2Url + endpoints.accountBank 
       + endpoints.authParam 
-      + utilities.getUtils()['apiKey'];
+      + utilities.getApiKey();
     httpGetAsync(query, (res) => {
       var bankItems = $.parseJSON(res);
-      Bank.addItems(bankItems.filter((item) => {
+      UserItems.Bank.addItems(bankItems.filter((item) => {
         return !!item && (!item.hasOwnProperty("binding") || item["binding"] === "Account");
       }).map((item) => {
         return {
@@ -261,11 +246,11 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
   $scope.utils = {};
   $scope.utils.items = [];
   $scope.utils.apiKey = temp_key;
-  utilities.getUtils()['apiKey'] = $scope.utils.apiKey;
+  utilities.setApiKey($scope.utils.apiKey);
 
   $scope.utils.updateView = function() {
     console.log($scope.utils.apiKey);
-    utilities.getUtils()['apiKey'] = $scope.utils.apiKey;
+    utilities.setApiKey($scope.utils.apiKey);
 
     var query = endpoints.v2Url + endpoints.characters + endpoints.authParam + $scope.utils.apiKey;
     LoadAccountService.updateBank();
@@ -306,7 +291,7 @@ app.controller('TimerCtrl', function($scope, $timeout) {
 
 /************************Filter Controller*************************************/
 app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, utilities, _) {
-  var apiKey = utilities.getUtils()["apiKey"];
+  var apiKey = utilities.getApiKey();
   $scope.crafting = crafting;
   $scope.crafting.selectedTypes = [];
   $scope.crafting.selectedTypeModels = {};
