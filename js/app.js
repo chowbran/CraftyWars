@@ -125,74 +125,78 @@ app.factory("Inventory", function() {
     addCharacter: function(characterId) {
       inventory[characterId] = {};
     },
-    setInventoryByCharacter: function(characterId, inventory) {
-      inventory[characterId] = inventory;
+    setInventoryByCharacter: function(characterId, items) {
+      inventory[characterId] = items;
     },
     getInventoryByCharacter: function(characterId) {
       return inventory[characterId];
+    },
+    clearCharacters: function() {
+      inventory = {};
     }
   }
 });
 
-app.factory("Account", function(_) {
+app.factory("MaterialStorage", function() {
   var items = [];
-  var bankItems = [];
-  var materialStorage = [];
-  var characterIds = [];
 
   return {
-      getItems: function() {
-          return items;
-      },
-      addItems: function(_items) {
-        items = _.union(items, _items);
-      },
-      addItem: function(item) {
-        items.push(item);
-      },
-      getBankItems: function() {
-          return bankItems;
-      },
-      addBankItems: function(items) {
-        bankItems = _.union(bankItems, items);
-      },
-      addBankItem: function(item) {
-        bankItems.push(item);
-      },
-      getMaterialStorage: function() {
-        return materialStorage;
-      },
-      addMaterials: function(items) {
-        materialStorage = _.union(materialStorage, items);
-      },
-      addMaterial: function(item) {
-        materialStorage.push(item);
-      },
-      getCharacterIds: function() {
-        return charactersIds;
-      },
-      addCharacterId: function(characterId) {
-        characterIds.push(characterId);
-      },
-      clearCharacterIds: function() {
-        characterIds.length = 0;
-      }
+    getItems: function() {
+      return items;
+    },
+    addItems: function(newItems) {
+      items = _.union(items, newItems);
+    },
+    addItem: function(item) {
+      items.push(item);
+    }
+  }
+});
+
+app.factory("Bank", function() {
+  var items = [];
+
+  return {
+    getItems: function() {
+        return items;
+    },
+    addItems: function(newItems) {
+      items = _.union(items, newItems);
+    },
+    addItem: function(item) {
+      items.push(item);
+    }
+  }
+});
+
+app.factory("AccountStorage", function(_) {
+  var items = [];
+
+  return {
+    getItems: function() {
+      return items;
+    },
+    addItems: function(newItems) {
+      items = _.union(items, newItems);
+    },
+    addItem: function(item) {
+      items.push(item);
+    }
   };
 });
 
-app.service("LoadAccountService", function($rootScope, utilities, endpoints, Account, Inventory) {
+app.service("LoadAccountService", function($rootScope, utilities, endpoints, MaterialStorage, Bank, Inventory) {
   this.updateCharacters = function() {
     var query = endpoints.v2Url + endpoints.characters 
       + endpoints.authParam 
       + utilities.getUtils()['apiKey']
       + "&" + endpoints.pageParam + "0";
-    Account.clearCharacterIds();
+    Inventory.clearCharacters();
 
     httpGetAsync(query, (res) => {
       console.log(query);
       characters = $.parseJSON(res);
       characters.forEach((character) => {
-        Account.addCharacterId(character["name"]);
         Inventory.addCharacter(character["name"])
       });
 
@@ -218,13 +222,28 @@ app.service("LoadAccountService", function($rootScope, utilities, endpoints, Acc
     });
   };
 
+  this.updateMaterialStorage = function() {
+    var query = endpoints.v2Url + endpoints.accountMaterials 
+      + endpoints.authParam 
+      + utilities.getUtils()['apiKey'];
+    httpGetAsync(query, (res) => {
+      var craftingItems = $.parseJSON(res);
+      MaterialStorage.addItems(craftingItems.map((item) => {
+        return {
+          "id": item["id"],
+          "count": item["count"]
+        };
+      }));
+    });
+  };
+
   this.updateBank = function() {
     var query = endpoints.v2Url + endpoints.accountBank 
       + endpoints.authParam 
       + utilities.getUtils()['apiKey'];
     httpGetAsync(query, (res) => {
       var bankItems = $.parseJSON(res);
-      Account.addItems(bankItems.filter((item) => {
+      Bank.addItems(bankItems.filter((item) => {
         return !!item && (!item.hasOwnProperty("binding") || item["binding"] === "Account");
       }).map((item) => {
         return {
@@ -242,7 +261,6 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
   $scope.utils = {};
   $scope.utils.items = [];
   $scope.utils.apiKey = temp_key;
-  // utilities.setUtils({'apiKey': $scope.utils.apiKey});
   utilities.getUtils()['apiKey'] = $scope.utils.apiKey;
 
   $scope.utils.updateView = function() {
@@ -250,10 +268,6 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
     utilities.getUtils()['apiKey'] = $scope.utils.apiKey;
 
     var query = endpoints.v2Url + endpoints.characters + endpoints.authParam + $scope.utils.apiKey;
-    // httpGetAsync(query, (res) => {
-    //   $scope.utils.items = $.parseJSON(res);
-    //   console.log($scope.utils.items);
-    // });
     LoadAccountService.updateBank();
     LoadAccountService.updateCharacters();
   };
