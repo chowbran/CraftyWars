@@ -19,9 +19,10 @@
   "permissions": [
     "fileSystem",
     "storage",
-    "unlimitedStorage" 
+    "unlimitedStorage",
+    "https://render.guildwars2.com"
   ],
-  "content_security_policy": "script-src 'self' http://xxxx 'unsafe-inline'; object-src 'self'",
+  "content_security_policy": "script-src 'self' http://xxxx 'unsafe-inline'; object-src 'self'; img-src https://render.guildwars2.com;",
   "web_accessible_resources": [
     "bootstrap/fonts/*"
   ]

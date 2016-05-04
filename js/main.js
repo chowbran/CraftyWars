@@ -17,6 +17,22 @@ function httpGetAsync(url, callback) {
   req.send(null);
 }
 
+function httpGetBlobAsync(url, callback) {
+  var req = new XMLHttpRequest();
+  req.open("GET", url, true); // true for asynchronous
+  req.responseType = 'blob';
+  req.onload = function(e) {
+    callback(req.response);
+  }
+// req.onload = function(e) {
+//   var img = document.createElement('img');
+//   img.src = window.URL.createObjectURL(this.response);
+//   document.body.appendChild(img);
+// };
+
+  req.send(null);
+}
+
 function test3(arr) {
   chrome.storage.sync.get("recipes", function(result) {
     chrome.storage.local.set({"recipes": _.union(result["recipes"], arr)});

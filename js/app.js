@@ -5,6 +5,19 @@ var app = angular.module('myApp', [
   "smart-table"
 ]);
 
+app.config( [
+    '$compileProvider',
+    function( $compileProvider ) {
+        var currentImgSrcSanitizationWhitelist = $compileProvider.imgSrcSanitizationWhitelist();
+        var newImgSrcSanitizationWhiteList = currentImgSrcSanitizationWhitelist.toString().slice(0,-1)
+        + '|chrome-extension:'
+        +currentImgSrcSanitizationWhitelist.toString().slice(-1);
+
+        console.log("Changing imgSrcSanitizationWhiteList from "+currentImgSrcSanitizationWhitelist+" to "+newImgSrcSanitizationWhiteList);
+        $compileProvider.imgSrcSanitizationWhitelist(newImgSrcSanitizationWhiteList);
+    }
+]);
+
 app.run(function($rootScope, LoadGW2) {
   $rootScope.gw2 = {};
   $rootScope.gw2.items = [];
@@ -12,6 +25,7 @@ app.run(function($rootScope, LoadGW2) {
   $rootScope.gw2.recipes = [];
   $rootScope.gw2.recipeIds = [];
 
+  LoadGW2.fetchIcons();
   chrome.storage.local.get("recipes", function(recipes) {
     chrome.storage.local.get("items", function(items) {
       if ((items["items"] === undefined) || (recipes["recipes"] === undefined)) {
@@ -37,7 +51,7 @@ app.run(function($rootScope, LoadGW2) {
   });
 });
 
-app.service('LoadGW2', function($rootScope, endpoints, _) {
+app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, ReverseRenderIds, _) {
   this.fetchRecipesAndItems = function() {
     var query = endpoints.v2Url + endpoints.recipes;
     httpGetAsync(query, (res) => {
@@ -79,7 +93,7 @@ app.service('LoadGW2', function($rootScope, endpoints, _) {
     });
   };
 
-  this.fetchItemsById = function(itemIds) {
+  var fetchItemsById = function(itemIds) {
     var baseQuery = endpoints.v2Url + endpoints.items;
     var diffItemIds = _.difference(itemIds, $rootScope.gw2.itemIds);
     $rootScope.gw2.itemIds = _.union($rootScope.gw2.itemIds, diffItemIds);
@@ -101,18 +115,52 @@ app.service('LoadGW2', function($rootScope, endpoints, _) {
       });
     });
   };
+
+  this.fetchIcons = function() {
+      var query = endpoints.v2Url + endpoints.files + endpoints.idsParam;
+      var iconInfos = {};
+      $rootScope.gw2.icons = {};
+
+      query = query + crafting.crafts.filter((craft) => {
+        var discipline = craft["discipline"];
+        return !!RenderIds[discipline];
+      }).map((craft) => {
+        var discipline = craft["discipline"];
+        return RenderIds[discipline];
+      }).join();
+
+      httpGetAsync(query, (res) => {
+        var iconInfoArr = $.parseJSON(res);
+        iconInfoArr.forEach((iconInfo) => {
+          httpGetBlobAsync(iconInfo["icon"], (res) => {
+            var img = document.createElement('img');
+            img.src = window.URL.createObjectURL(res);
+            $rootScope.gw2.icons[iconInfo["id"]] = window.URL.createObjectURL(res);
+          });
+        });
+      });
+  };
 });
 
-app.service('utilities', function () {
+app.service('utilities', function ($rootScope, RenderIds) {
   var apiKey = "";
 
   this.getApiKey = function() {
     return apiKey;
-  }
+  };
 
   this.setApiKey = function(value) {
     apiKey = value;
-  }
+  };
+
+  this.getIcon = function(iconId) {
+    if (!!RenderIds[iconId]) {
+      // console.log($rootScope.gw2.icons);
+      return $rootScope.gw2.icons[RenderIds[iconId]];
+    } else {
+      return null;
+    }
+  };
 });
 
 app.factory("ItemCollection", function() {
@@ -353,13 +401,74 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
 });
 
 /************************Filter Controller*************************************/
-app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, utilities, _, UserItems) {
+app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafting, endpoints, utilities, _, UserItems) {
   var apiKey = utilities.getApiKey();
   $scope.CONST = crafting;
   $scope.selectedTypes = [];
   $scope.selectedTypeModels = {};
   $scope.selectedDisciplinesModel = [];
   $scope.recipes = $rootScope.gw2.recipes;
+
+  $scope.craftingDetails = [];
+  $scope.count = 0;
+
+  $scope.idsToHtmlImgs = function(ids) {
+    var html = "<div>";
+
+    ids.forEach((id) => {
+      var img = utilities.getIcon(id);
+      if (!!img) {
+        html = html + "<img class=\"icons\" src=" + img + " ng-mouseover=\"count = count + 1\">";
+      }
+    });
+
+    html = html + "</div>"
+
+    console.log(html);
+
+    return $sce.trustAsHtml(html);
+  };
+
+
+  function hoverDetails() {
+    console.log("Hello World");
+  }
+
+  $scope.hoverDetails = function() {
+    console.log(id);
+  };
+
+  var updatedCraftingDetails = function() {
+    var result = {};
+
+    $scope.recipes.forEach((recipe) => {
+      result[recipe["id"]] = {
+        "craftable": false,
+        "min_rating": recipe["min_rating"],
+        "type": recipe["type"],
+        "craftedItem": {},
+        "disciplines": recipe["disciplines"],
+        "ingredients": [],
+        "craftCost": 0,
+        "sellPrice": 0,
+        "profit": 0
+      }
+    });
+
+    $scope.craftingDetails = Object.keys(result).map((recipeId) => {
+      return result[recipeId];
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('img').addEventListener('click', hoverDetails);
+    });
+  };
+
+  var filterCraftables = function() {
+    var items = UserItems.getItems();
+
+
+  };
 
   $scope.updateSelectedTypes = function () {
     $scope.selectedTypes.length = 0;
@@ -373,6 +482,7 @@ app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, u
     $scope.recipes = $rootScope.gw2.recipes;
     // $scope.items = UserItems.Inventory.getItemsByCharacter("Sylvar");
     $scope.items = UserItems.getItems();
+    updatedCraftingDetails();
   };
 
   $scope.test1 = function() {

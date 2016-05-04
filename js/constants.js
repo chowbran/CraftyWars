@@ -1,7 +1,7 @@
 app.constant('crafting', {
   crafts: [
     {"discipline": "Armorsmith"},
-    {"discipline": "Artificier"},
+    {"discipline": "Artificer"},
     {"discipline": "Chef"},
     {"discipline": "Huntsman"},
     {"discipline": "Jeweler"},
@@ -25,10 +25,28 @@ app.constant('crafting', {
   }
 });
 
-app.constant('StorageIds', {
-  bankId: "Bank",
-  materialStorageId: "Material",
-  accountStorageId: "Account"
+app.constant('RenderIds', {
+    "Armorsmith": "map_crafting_armorsmith",
+    "Artificer": "map_crafting_artificer",
+    "Chef": "map_crafting_cook",
+    "Huntsman": "map_crafting_huntsman",
+    "Jeweler": "map_crafting_jeweler",
+    "Leatherworker": "map_crafting_leatherworker",
+    // "Scribe": "map_crafting_scribe",
+    "Tailor": "map_crafting_tailor",
+    "Weaponsmith": "map_crafting_weaponsmith",
+});
+
+app.constant('ReverseRenderIds', {
+    "map_crafting_armorsmith": "Armorsmith",
+    "map_crafting_artificer": "Artificer",
+    "map_crafting_cook": "Chef",
+    "map_crafting_huntsman": "Huntsman",
+    "map_crafting_jeweler": "Jeweler",
+    "map_crafting_leatherworker": "Leatherworker",
+    // "map_crafting_scribe": "Scribe",
+    "map_crafting_tailor": "Tailor",
+    "map_crafting_weaponsmith": "Weaponsmith"
 });
 
 app.constant('endpoints', {
@@ -45,5 +63,7 @@ app.constant('endpoints', {
   authParam: "?access_token=", 
   idsParam: "?ids=",
   pageParam: "page=",
+  files: "files",
+  renderService: "https://render.guildwars2.com/file/signature/file_id.png",
   idsParamLimit: 200
 });
