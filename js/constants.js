@@ -25,6 +25,12 @@ app.constant('crafting', {
   }
 });
 
+app.constant('StorageIds', {
+  bankId: "Bank",
+  materialStorageId: "Material",
+  accountStorageId: "Account"
+});
+
 app.constant('endpoints', {
   v1Url: "https://api.guildwars2.com/v1/",
   v2Url: "https://api.guildwars2.com/v2/",

@@ -19,7 +19,7 @@ app.run(function($rootScope, LoadGW2) {
           "recipes": [],
           "items": []
         }, () => {
-          LoadService.fetchRecipesAndItems();
+          LoadGW2.fetchRecipesAndItems();
         });
         console.log("Fetched from server");
       } else {
@@ -137,31 +137,31 @@ app.factory("ItemCollection", function() {
 });
 
 app.factory("Inventory", function(ItemCollection) {
-  var characterIds = [];
   var Inventory = function() {
     this.inventory = {};
   };
 
   Inventory.prototype.addCharacter = function(characterId) {
-    characterIds.push(characterId);
-    inventory[characterId] = new ItemCollection();
+    this.inventory[characterId] = new ItemCollection();
   };
   Inventory.prototype.addItemByCharacter = function(characterId, item) {
-    inventory[characterId].addItem(item);
+    this.inventory[characterId].addItem(item);
   };
   Inventory.prototype.addItemsByCharacter = function(characterId, items) {
-    inventory[characterId].addItems(items);
+    this.inventory[characterId].addItems(items);
   };
   Inventory.prototype.getItemsByCharacter = function(characterId) {
-    return inventory[characterId].getItems();
+    return this.inventory[characterId].getItems();
   };
   Inventory.prototype.clearCharacters = function() {
-    characterIds.length = 0;
-    inventory = {};
+    this.inventory = {};
   };
-  Inventory.prototype.getAllItems = function() {
+  Inventory.prototype.getInventories = function() {
+    return this.inventory;
+  };
+  Inventory.prototype.getItems = function() {
     var result = [];
-    characterIds.forEach((characterId) => {
+    Object.keys(this.inventory).forEach((characterId) => {
       result = _.union(result, this.getItemsByCharacter(characterId));
     });
 
@@ -181,6 +181,50 @@ app.service("UserItems", function(ItemCollection, Inventory) {
   this.MaterialStorage = materialStorage;
   this.Inventory = inventory;
   this.AccountStorage = accountStorage;
+
+  this.getItemsInfo = function() {
+    var result = {};
+    var storageIds = {
+      "Bank": bank,
+      "Material": materialStorage,
+      "Acount": accountStorage
+    };
+    var inventories = inventory.getInventories();
+
+    Object.keys(inventories).forEach((characterId) => {
+      storageIds[characterId] = inventories[characterId];
+    });
+
+    Object.keys(storageIds).forEach((storageId) => {
+      storageIds[storageId].getItems().forEach((item) => {
+        if (!!result[item["id"]]) {
+          result[item["id"]]["count"] = result[item["id"]]["count"] + item["count"];
+          result[item["id"]]["location"][storageId] = item["count"];
+        } else {
+          result[item["id"]] = {};
+          result[item["id"]]["count"] = item["count"];
+          result[item["id"]]["location"] = {}
+          result[item["id"]]["location"][storageId] = item["count"];
+        }
+      });
+    });
+
+    return result;
+  };
+
+  this.getItems = function() {
+    var itemInfo = this.getItemsInfo();
+    var result = [];
+
+    Object.keys(itemInfo).forEach((itemId) => {
+      result.push({
+        "id": itemId,
+        "count": itemInfo[itemId]["count"]
+      });
+    });
+
+    return result;
+  };
 });
 
 app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems) {
@@ -199,7 +243,6 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
       });
 
       updateBags(characters);
-      console.log("Inventories Loaded");
     });
   };
 
@@ -216,7 +259,7 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
               "count": item["count"]
             };
           }));
-        }
+        } 
       });
     });
   };
@@ -227,13 +270,14 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
       + utilities.getApiKey();
     httpGetAsync(query, (res) => {
       var craftingItems = $.parseJSON(res);
-      UserItems.MaterialStorage.addItems(craftingItems.map((item) => {
+      UserItems.MaterialStorage.addItems(craftingItems.filter((item) => {
+        return item["count"] > 0;
+      }).map((item) => {
         return {
           "id": item["id"],
           "count": item["count"]
         };
       }));
-      console.log("Material Storage Loaded");
     });
   };
 
@@ -249,7 +293,6 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
           "count": item["count"]
         };
       }));
-      console.log("Account Storage Loaded");
     });
   };
 
@@ -268,7 +311,6 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
         };
       }));
 
-      console.log("Bank Loaded");
     });
   };
 });
@@ -279,7 +321,6 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
   $scope.utils = {};
   $scope.items = [];
   $scope.apiKey = temp_key;
-  utilities.setApiKey($scope.apiKey);
 
   $scope.updateUser = function() {
     console.log($scope.apiKey);
@@ -311,18 +352,6 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
   $scope.$watch('apiKey', $scope.updateUser);
 });
 
-/***********************************************Timer Controller****************************************/
-app.controller('TimerCtrl', function($scope, $timeout) {
-  $scope.date = {};
-  // Update function
-  var updateTime = function() {
-    $scope.date.raw = new Date();
-    $timeout(updateTime, 1000);
-  }
-  // Kick off the update function
-  updateTime();
-});
-
 /************************Filter Controller*************************************/
 app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, utilities, _, UserItems) {
   var apiKey = utilities.getApiKey();
@@ -340,31 +369,23 @@ app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, u
     });
   };
 
-  var fetchMaterialsBank = function() {
-    var query = endpoints.v2Url + endpoints.accountMaterials + endpoints.authParam + apiKey;
-    // httpGetAsync(query, (res) => {
-    //   $scope.items = $.parseJSON(res);
-    // });
-    $scope.items = UserItems.MaterialStorage.getItems();
-  };
-
   $scope.refresh = function() {
     $scope.recipes = $rootScope.gw2.recipes;
-    $scope.items = UserItems.MaterialStorage.getItems();
+    // $scope.items = UserItems.Inventory.getItemsByCharacter("Sylvar");
+    $scope.items = UserItems.getItems();
   };
 
   $scope.test1 = function() {
-    // console.log($scope.selectedDisciplinesModel);
-    // $scope.updateSelectedTypes();
-    // console.log($scope.selectedTypes);
+    console.log($scope.selectedDisciplinesModel);
+    console.log($scope.selectedTypes);
     console.log(UserItems.Bank.getItems());
-    console.log(UserItems.Inventory.getAllItems());
+    console.log(UserItems.Inventory.getItems());
     console.log(UserItems.MaterialStorage.getItems());
   };
 
   $scope.updateAllDisciplines = function($event) {
     if ($event.target.checked) {
-      $scope.crafts.forEach((craft) => {
+      $scope.CONST.crafts.forEach((craft) => {
         if ($scope.selectedDisciplinesModel.indexOf(craft.discipline) < 0) {
           $scope.selectedDisciplinesModel.push(craft.discipline);
         }
@@ -377,7 +398,5 @@ app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, u
   $scope.isAllSelected = function() {
     return $scope.CONST.crafts.length === $scope.selectedDisciplinesModel.length;
   };
-
-  fetchMaterialsBank();
 });
 

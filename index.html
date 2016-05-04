@@ -48,7 +48,7 @@
 
       <div class="inline" data-ng-repeat="class in CONST.craftClass">
         <label>&nbsp;&nbsp;  {{class | capitalize }}:  </label>
-        <multiselect data-ng-click="updateSelectedTypes()" data-ng-model="selectedTypeModels[class]" options="(t | stringify) for t in craftType[class]" data-multiple="true" scroll-after-rows="10" filter-after-rows="10" max-width="100">
+        <multiselect data-ng-click="updateSelectedTypes()" data-ng-model="selectedTypeModels[class]" options="(t | stringify) for t in CONST.craftType[class]" data-multiple="true" scroll-after-rows="10" filter-after-rows="10" max-width="100">
         </multiselect>
 
       </div>
