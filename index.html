@@ -14,7 +14,7 @@
 
   <div class="col-lg-12">
     <div data-ng-controller="MainCtrl">
-      <input type="text" id="txtApiKey" class="form-control" placeholder="API Key" data-ngchange="utils.updateView()" data-ng-model="utils.apiKey"></input>
+      <input type="text" id="txtApiKey" class="form-control" placeholder="API Key" data-ng-model="apiKey"></input>
 
 <!--       <div class="input-group">
         <input type="text" id="txtSearch" class="form-control" placeholder="Search...">
@@ -23,8 +23,8 @@
         </span>
       </div> -->
       <hr>
-      <button data-ng-click="utils.saveLocal()" class="btn btn-secondary" type="button">Save to local</button>
-      <button data-ng-click="utils.clearLocal()" class="btn btn-secondary" type="button">Clear local</button>
+      <button data-ng-click="saveLocal()" class="btn btn-secondary" type="button">Save to local</button>
+      <button data-ng-click="clearLocal()" class="btn btn-secondary" type="button">Clear local</button>
     </div>
   </div>
   
@@ -34,39 +34,34 @@
       <button data-ng-click="test1()" class="btn btn-secondary" type="button">Debug</button>
       <button data-ng-click="refresh()" class="btn btn-secondary" type="button">Refresh</button>
       <form class="form-inline">
-        <div class="checkbox" data-ng-repeat="craft in crafting.crafts">
-          <input type="checkbox" checklist-model="crafting.selectedDisciplinesModel" checklist-value="craft.discipline"> 
+        <div class="checkbox" data-ng-repeat="craft in CONST.crafts">
+          <input type="checkbox" checklist-model="selectedDisciplinesModel" checklist-value="craft.discipline"> 
             {{ craft.discipline }} &nbsp;&nbsp; 
           </input>
         </div>
         <div class="checkbox">
-          <input type="checkbox" data-ng-click="crafting.updateAllDisciplines($event)" data-ng-checked="crafting.isAllSelected()"> 
+          <input type="checkbox" data-ng-click="updateAllDisciplines($event)" data-ng-checked="isAllSelected()"> 
             Select All
           </input>
         </div>
       </form>
 
-      <div class="inline" data-ng-repeat="class in crafting.craftClass">
+      <div class="inline" data-ng-repeat="class in CONST.craftClass">
         <label>&nbsp;&nbsp;  {{class | capitalize }}:  </label>
-        <multiselect data-ng-click="crafting.updateSelectedTypes()" data-ng-model="crafting.selectedTypeModels[class]" options="(t | stringify) for t in crafting.craftType[class]" data-multiple="true" scroll-after-rows="10" filter-after-rows="10" max-width="100">
+        <multiselect data-ng-click="updateSelectedTypes()" data-ng-model="selectedTypeModels[class]" options="(t | stringify) for t in craftType[class]" data-multiple="true" scroll-after-rows="10" filter-after-rows="10" max-width="100">
         </multiselect>
 
       </div>
 
       <br>
       <div>
-        <table st-safe-src="crafting.recipes" st-table="displayedCollection" class="table table-striped">
+        <table st-safe-src="items" st-table="displayedCollection" class="table table-striped">
             <thead>
               <tr>
-                <th st-ratio="5" st-sort="id">id</th>
-                <th st-ratio="10">type</th>
-                <th st-ratio="5">output_item_id</th>
-                <th st-ratio="10">count</th>
-                <th st-ratio="30">disciplines</th>
-                <th st-ratio="10">min rating</th>
-                <th st-ratio="30">ingredients</th>
+                <th st-ratio="50" st-sort="id">id</th>
+                <th st-ratio="50">count</th>
               </tr>
-              <th>
+<!--               <th>
                 <input st-search="id" placeholder="search id" class="input-sm form-control" type="search"/>
               </th>
               <th>
@@ -86,17 +81,12 @@
               </th>
               <th>
                 <input st-search="ingredients" placeholder="search count" class="input-sm form-control" type="search"/>
-              </th>
+              </th> -->
             </thead>
             <tbody>
-              <tr ng-repeat="recipe in displayedCollection">
-                <td>{{recipe.id}}</td>
-                <td>{{recipe.type}}</td>
-                <td>{{recipe.output_item_id}}</td>
-                <td>{{recipe.output_item_count}}</td>
-                <td>{{recipe.disciplines}}</td>
-                <td>{{recipe.min_rating}}</td>
-                <td>{{recipe.ingredients}}</td>
+              <tr ng-repeat="item in displayedCollection">
+                <td>{{item.id}}</td>
+                <td>{{item.count}}</td>
               </tr>
             </tbody>
           <tfoot>

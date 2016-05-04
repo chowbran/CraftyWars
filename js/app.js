@@ -5,7 +5,7 @@ var app = angular.module('myApp', [
   "smart-table"
 ]);
 
-app.run(function($rootScope, LoadService) {
+app.run(function($rootScope, LoadGW2) {
   $rootScope.gw2 = {};
   $rootScope.gw2.items = [];
   $rootScope.gw2.itemIds = [];
@@ -37,7 +37,7 @@ app.run(function($rootScope, LoadService) {
   });
 });
 
-app.service('LoadService', function($rootScope, endpoints, _) {
+app.service('LoadGW2', function($rootScope, endpoints, _) {
   this.fetchRecipesAndItems = function() {
     var query = endpoints.v2Url + endpoints.recipes;
     httpGetAsync(query, (res) => {
@@ -137,11 +137,13 @@ app.factory("ItemCollection", function() {
 });
 
 app.factory("Inventory", function(ItemCollection) {
+  var characterIds = [];
   var Inventory = function() {
     this.inventory = {};
   };
 
   Inventory.prototype.addCharacter = function(characterId) {
+    characterIds.push(characterId);
     inventory[characterId] = new ItemCollection();
   };
   Inventory.prototype.addItemByCharacter = function(characterId, item) {
@@ -154,8 +156,17 @@ app.factory("Inventory", function(ItemCollection) {
     return inventory[characterId].getItems();
   };
   Inventory.prototype.clearCharacters = function() {
+    characterIds.length = 0;
     inventory = {};
   };
+  Inventory.prototype.getAllItems = function() {
+    var result = [];
+    characterIds.forEach((characterId) => {
+      result = _.union(result, this.getItemsByCharacter(characterId));
+    });
+
+    return result;
+  }
 
   return Inventory;
 });
@@ -164,13 +175,15 @@ app.service("UserItems", function(ItemCollection, Inventory) {
   var bank = new ItemCollection();
   var materialStorage = new ItemCollection();
   var inventory = new Inventory();
+  var accountStorage = new ItemCollection();
 
   this.Bank = bank;
   this.MaterialStorage = materialStorage;
   this.Inventory = inventory;
+  this.AccountStorage = accountStorage;
 });
 
-app.service("LoadAccountService", function($rootScope, utilities, endpoints, UserItems) {
+app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems) {
   this.updateCharacters = function() {
     var query = endpoints.v2Url + endpoints.characters 
       + endpoints.authParam 
@@ -186,6 +199,7 @@ app.service("LoadAccountService", function($rootScope, utilities, endpoints, Use
       });
 
       updateBags(characters);
+      console.log("Inventories Loaded");
     });
   };
 
@@ -219,6 +233,23 @@ app.service("LoadAccountService", function($rootScope, utilities, endpoints, Use
           "count": item["count"]
         };
       }));
+      console.log("Material Storage Loaded");
+    });
+  };
+
+  this.updateAccountStorage = function() {
+    var query = endpoints.v2Url + endpoints.accountInventory 
+      + endpoints.authParam 
+      + utilities.getApiKey();
+    httpGetAsync(query, (res) => {
+      var craftingItems = $.parseJSON(res);
+      UserItems.MaterialStorage.addItems(craftingItems.map((item) => {
+        return {
+          "id": item["id"],
+          "count": item["count"]
+        };
+      }));
+      console.log("Account Storage Loaded");
     });
   };
 
@@ -236,28 +267,31 @@ app.service("LoadAccountService", function($rootScope, utilities, endpoints, Use
           "count": item["count"]
         };
       }));
+
+      console.log("Bank Loaded");
     });
   };
 });
 
 /***********************************************Main Controller****************************************/
-app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, LoadAccountService) {
+app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, LoadAccount) {
   var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
   $scope.utils = {};
-  $scope.utils.items = [];
-  $scope.utils.apiKey = temp_key;
-  utilities.setApiKey($scope.utils.apiKey);
+  $scope.items = [];
+  $scope.apiKey = temp_key;
+  utilities.setApiKey($scope.apiKey);
 
-  $scope.utils.updateView = function() {
-    console.log($scope.utils.apiKey);
-    utilities.setApiKey($scope.utils.apiKey);
+  $scope.updateUser = function() {
+    console.log($scope.apiKey);
+    utilities.setApiKey($scope.apiKey);
 
-    var query = endpoints.v2Url + endpoints.characters + endpoints.authParam + $scope.utils.apiKey;
-    LoadAccountService.updateBank();
-    LoadAccountService.updateCharacters();
+    var query = endpoints.v2Url + endpoints.characters + endpoints.authParam + $scope.apiKey;
+    LoadAccount.updateBank();
+    LoadAccount.updateCharacters();
+    LoadAccount.updateMaterialStorage();
   };
 
-  $scope.utils.saveLocal = function() {
+  $scope.saveLocal = function() {
     chrome.storage.local.clear(() => {
       chrome.storage.local.set({
         "recipes": $rootScope.gw2.recipes,
@@ -268,13 +302,13 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
     });
   }
 
-  $scope.utils.clearLocal = function() {
+  $scope.clearLocal = function() {
     chrome.storage.local.clear(() => {
       console.log("Clear successful");
     });
   }
 
-  $scope.$watch('utils.apiKey', $scope.utils.updateView);
+  $scope.$watch('apiKey', $scope.updateUser);
 });
 
 /***********************************************Timer Controller****************************************/
@@ -290,53 +324,58 @@ app.controller('TimerCtrl', function($scope, $timeout) {
 });
 
 /************************Filter Controller*************************************/
-app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, utilities, _) {
+app.controller('FilterCtrl', function($scope, $rootScope, crafting, endpoints, utilities, _, UserItems) {
   var apiKey = utilities.getApiKey();
-  $scope.crafting = crafting;
-  $scope.crafting.selectedTypes = [];
-  $scope.crafting.selectedTypeModels = {};
-  $scope.crafting.selectedDisciplinesModel = [];
-  $scope.crafting.recipes = $rootScope.gw2.recipes;
+  $scope.CONST = crafting;
+  $scope.selectedTypes = [];
+  $scope.selectedTypeModels = {};
+  $scope.selectedDisciplinesModel = [];
+  $scope.recipes = $rootScope.gw2.recipes;
 
-  $scope.crafting.updateSelectedTypes = function () {
-    $scope.crafting.selectedTypes.length = 0;
-    $scope.crafting.craftClass.forEach((cls) => {
-      $scope.crafting.selectedTypes = 
-        _.union($scope.crafting.selectedTypes, $scope.crafting.selectedTypeModels[cls]);
+  $scope.updateSelectedTypes = function () {
+    $scope.selectedTypes.length = 0;
+    $scope.CONST.craftClass.forEach((cls) => {
+      $scope.selectedTypes = 
+        _.union($scope.selectedTypes, $scope.selectedTypeModels[cls]);
     });
   };
 
   var fetchMaterialsBank = function() {
     var query = endpoints.v2Url + endpoints.accountMaterials + endpoints.authParam + apiKey;
-    httpGetAsync(query, (res) => {
-      $scope.crafting.items = $.parseJSON(res);
-    });
+    // httpGetAsync(query, (res) => {
+    //   $scope.items = $.parseJSON(res);
+    // });
+    $scope.items = UserItems.MaterialStorage.getItems();
   };
 
   $scope.refresh = function() {
-    $scope.crafting.recipes = $rootScope.gw2.recipes;
+    $scope.recipes = $rootScope.gw2.recipes;
+    $scope.items = UserItems.MaterialStorage.getItems();
   };
 
   $scope.test1 = function() {
-    console.log($scope.crafting.selectedDisciplinesModel);
-    $scope.crafting.updateSelectedTypes();
-    console.log($scope.crafting.selectedTypes);
+    // console.log($scope.selectedDisciplinesModel);
+    // $scope.updateSelectedTypes();
+    // console.log($scope.selectedTypes);
+    console.log(UserItems.Bank.getItems());
+    console.log(UserItems.Inventory.getAllItems());
+    console.log(UserItems.MaterialStorage.getItems());
   };
 
-  $scope.crafting.updateAllDisciplines = function($event) {
+  $scope.updateAllDisciplines = function($event) {
     if ($event.target.checked) {
-      $scope.crafting.crafts.forEach((craft) => {
-        if ($scope.crafting.selectedDisciplinesModel.indexOf(craft.discipline) < 0) {
-          $scope.crafting.selectedDisciplinesModel.push(craft.discipline);
+      $scope.crafts.forEach((craft) => {
+        if ($scope.selectedDisciplinesModel.indexOf(craft.discipline) < 0) {
+          $scope.selectedDisciplinesModel.push(craft.discipline);
         }
       });
     } else {
-      $scope.crafting.selectedDisciplinesModel.length = 0;
+      $scope.selectedDisciplinesModel.length = 0;
     }
   };
 
-  $scope.crafting.isAllSelected = function() {
-    return $scope.crafting.crafts.length === $scope.crafting.selectedDisciplinesModel.length;
+  $scope.isAllSelected = function() {
+    return $scope.CONST.crafts.length === $scope.selectedDisciplinesModel.length;
   };
 
   fetchMaterialsBank();
