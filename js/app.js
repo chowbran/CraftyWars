@@ -20,33 +20,37 @@ app.config( [
 
 app.run(function($rootScope, LoadGW2) {
   $rootScope.gw2 = {};
-  $rootScope.gw2.items = [];
+  $rootScope.gw2.icons = {};
+  $rootScope.gw2.items = {};
   $rootScope.gw2.itemIds = [];
+  $rootScope.gw2.recipes = [];
   $rootScope.gw2.recipes = [];
   $rootScope.gw2.recipeIds = [];
 
   LoadGW2.fetchIcons();
   chrome.storage.local.get("recipes", function(recipes) {
-    chrome.storage.local.get("items", function(items) {
-      if ((items["items"] === undefined) || (recipes["recipes"] === undefined)) {
-        chrome.storage.local.set({
-          "recipes": [],
-          "items": []
-        }, () => {
-          LoadGW2.fetchRecipesAndItems();
-        });
-        console.log("Fetched from server");
-      } else {
-        $rootScope.gw2.recipes = recipes["recipes"];
-        $rootScope.gw2.items = items["items"];
-        $rootScope.gw2.recipesIds = $rootScope.gw2.recipes.map((recipe) => {
-          return recipes["id"];
-        });
-        $rootScope.gw2.itemIds = $rootScope.gw2.items.map((item) => {
-          return item["id"];
-        });
-        console.log("Loaded from local storage");    
-      }
+    chrome.storage.local.get("itemIds", function(itemIds) {
+      chrome.storage.local.get(itemIds["itemIds"], function(items) {
+        if ((itemIds["itemIds"] === undefined) || (recipes["recipes"] === undefined)) {
+          chrome.storage.local.set({
+            "recipes": [],
+            "itemIds": []
+          }, () => {
+            LoadGW2.fetchRecipesAndItems();
+          });
+          console.log("Fetched from server");
+        } else {
+          $rootScope.gw2.recipes = recipes["recipes"];
+
+          $rootScope.gw2.itemIds = itemIds["itemIds"];
+
+          itemIds["itemIds"].forEach((itemId) => {
+            $rootScope.gw2.items[itemId] = items[itemId];
+          });
+
+          console.log("Loaded from local storage");    
+        }
+      });
     });
   });
 });
@@ -87,7 +91,7 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
             return recipe["output_item_id"];
           }), recipeItemIds);
 
-          this.fetchItemsById(recipeItemIds);
+          fetchItemsById(recipeItemIds);
         });
       });
     });
@@ -111,34 +115,33 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
 
       httpGetAsync(query, (res) => {
         var itemArr = $.parseJSON(res);
-        $rootScope.gw2.items = _.union($rootScope.gw2.items, itemArr);
+        itemArr.forEach((item) => {
+          $rootScope.gw2.items[item["id"]] = item;
+        });
       });
     });
   };
 
   this.fetchIcons = function() {
-      var query = endpoints.v2Url + endpoints.files + endpoints.idsParam;
-      var iconInfos = {};
-      $rootScope.gw2.icons = {};
+    var query = endpoints.v2Url + endpoints.files + endpoints.idsParam;
+    var iconInfos = {};
 
-      query = query + crafting.crafts.filter((craft) => {
-        var discipline = craft["discipline"];
-        return !!RenderIds[discipline];
-      }).map((craft) => {
-        var discipline = craft["discipline"];
-        return RenderIds[discipline];
-      }).join();
+    query = query + crafting.crafts.filter((craft) => {
+      var discipline = craft["discipline"];
+      return !!RenderIds[discipline];
+    }).map((craft) => {
+      var discipline = craft["discipline"];
+      return RenderIds[discipline];
+    }).join();
 
-      httpGetAsync(query, (res) => {
-        var iconInfoArr = $.parseJSON(res);
-        iconInfoArr.forEach((iconInfo) => {
-          httpGetBlobAsync(iconInfo["icon"], (res) => {
-            var img = document.createElement('img');
-            img.src = window.URL.createObjectURL(res);
-            $rootScope.gw2.icons[iconInfo["id"]] = window.URL.createObjectURL(res);
-          });
+    httpGetAsync(query, (res) => {
+      var iconInfoArr = $.parseJSON(res);
+      iconInfoArr.forEach((iconInfo) => {
+        httpGetBlobAsync(iconInfo["icon"], (res) => {
+          $rootScope.gw2.icons[iconInfo["id"]] = window.URL.createObjectURL(res);
         });
       });
+    });
   };
 });
 
@@ -157,8 +160,21 @@ app.service('utilities', function ($rootScope, RenderIds) {
     if (!!RenderIds[iconId]) {
       // console.log($rootScope.gw2.icons);
       return $rootScope.gw2.icons[RenderIds[iconId]];
+    } else if (!!$rootScope.gw2.icons[iconId]) {
+      console.log("Reusing for " + iconId)
+      return $rootScope.gw2.icons[iconId];
     } else {
-      return null;
+      if (iconId === "Scribe") {
+        return null;
+      } else {
+        console.log(iconId);
+        var url = $rootScope.gw2.items[iconId]["icon"];
+        httpGetBlobAsync(url, (res) => {
+          $rootScope.gw2.icons[iconId] = window.URL.createObjectURL(res);
+        });
+
+        return $rootScope.gw2.icons[iconId];
+      }
     }
   };
 });
@@ -381,11 +397,13 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
   };
 
   $scope.saveLocal = function() {
+    console.log($rootScope.gw2.items);
     chrome.storage.local.clear(() => {
-      chrome.storage.local.set({
-        "recipes": $rootScope.gw2.recipes,
-        "items": $rootScope.gw2.items
-      }, () => {
+      var saveObj = $rootScope.gw2.items;
+      saveObj["recipes"] = $rootScope.gw2.recipes;
+      saveObj["itemIds"] = Object.keys($rootScope.gw2.items);
+
+      chrome.storage.local.set(saveObj, () => {
         console.log("save successful")
       });
     });
@@ -418,13 +436,11 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
     ids.forEach((id) => {
       var img = utilities.getIcon(id);
       if (!!img) {
-        html = html + "<img class=\"icons\" src=" + img + " ng-mouseover=\"count = count + 1\">";
+        html = html + "<img class=\"icons\" src=" + img + ">";
       }
     });
 
     html = html + "</div>"
-
-    console.log(html);
 
     return $sce.trustAsHtml(html);
   };
@@ -448,7 +464,9 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
         "type": recipe["type"],
         "craftedItem": {},
         "disciplines": recipe["disciplines"],
-        "ingredients": [],
+        "ingredients": recipe["ingredients"].map((item) => {
+          return item["item_id"];
+        }),
         "craftCost": 0,
         "sellPrice": 0,
         "profit": 0

@@ -94,7 +94,8 @@
                 <td>{{ item.type }}</td>
                 <td>{{ item.craftedItem }}</td>
                 <td><div ng-bind-html="idsToHtmlImgs(item.disciplines)"></div></td>
-                <td>{{ item.ingredients }}</td>
+                <td><div ng-bind-html="idsToHtmlImgs(item.ingredients)"></div></td>
+                <!-- <td>{{ item.ingredients }}</td> -->
                 <td>{{ item.craftCost }}</td>
                 <td>{{ item.sellPrice }}</td>
                 <td>{{ item.profit }}</td>
