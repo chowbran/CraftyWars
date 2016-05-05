@@ -22,8 +22,6 @@ app.run(function($rootScope, LoadGW2) {
   $rootScope.gw2 = {};
   $rootScope.gw2.icons = {};
   $rootScope.gw2.items = {};
-  $rootScope.gw2.itemIds = [];
-  $rootScope.gw2.recipes = [];
   $rootScope.gw2.recipes = [];
   $rootScope.gw2.recipeIds = [];
 
@@ -41,12 +39,7 @@ app.run(function($rootScope, LoadGW2) {
           console.log("Fetched from server");
         } else {
           $rootScope.gw2.recipes = recipes["recipes"];
-
-          $rootScope.gw2.itemIds = itemIds["itemIds"];
-
-          itemIds["itemIds"].forEach((itemId) => {
-            $rootScope.gw2.items[itemId] = items[itemId];
-          });
+          $rootScope.gw2.items = items;
 
           console.log("Loaded from local storage");    
         }
@@ -75,7 +68,6 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
         httpGetAsync(newQuery, (res) => {
           var arr = $.parseJSON(res);
           var recipeItemIds = [];
-          var diffRecipes = _.difference(arr, $rootScope.gw2.recipes);
           $rootScope.gw2.recipes = _.union($rootScope.gw2.recipes, arr);
 
           recipeItemIds = arr.map((recipe) => {
@@ -99,15 +91,13 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
 
   var fetchItemsById = function(itemIds) {
     var baseQuery = endpoints.v2Url + endpoints.items;
-    var diffItemIds = _.difference(itemIds, $rootScope.gw2.itemIds);
-    $rootScope.gw2.itemIds = _.union($rootScope.gw2.itemIds, diffItemIds);
 
     var idsPerChunk = endpoints.idsParamLimit;
-    var chunks = Math.ceil(diffItemIds.length / idsPerChunk);
+    var chunks = Math.ceil(itemIds.length / idsPerChunk);
     var chunkArrays = [];
     var i, j;
-    for (i = 0, j = diffItemIds.length; i<j; i+=idsPerChunk) {
-      chunkArrays.push(diffItemIds.slice(i,i+idsPerChunk));
+    for (i = 0, j = itemIds.length; i<j; i+=idsPerChunk) {
+      chunkArrays.push(itemIds.slice(i,i+idsPerChunk));
     }
 
     chunkArrays.forEach((chunkArray) => {
