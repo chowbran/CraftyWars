@@ -5,6 +5,7 @@
 
   <title>Crafty Wars</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/loadingSpinner.css">
   <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
   <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
 </head>
@@ -29,7 +30,7 @@
   </div>
   
 
-  <div class="col-lg-1">
+  <div class="col-lg-12">
     <div data-ng-controller="FilterCtrl">
       <button data-ng-click="test1()" class="btn btn-secondary" type="button">Debug</button>
       <button data-ng-click="refresh()" class="btn btn-secondary" type="button">Refresh</button>
@@ -55,20 +56,20 @@
 
       <br>
       <div>
-        <table st-safe-src="craftingDetails" st-table="displayedCollection" class="table table-striped">
+        <table st-safe-src="craftingList" st-table="displayedCollection" class="table table-striped">
             <thead>
-              <tr>
-                <th st-ratio="5">Craftable</th>
-                <th st-ratio="5">Min Rating</th>
-                <th st-ratio="10">Type</th>
-                <th st-ratio="5">Crafted Item</th>
-                <th st-ratio="10">disciplines</th>
-                <th st-ratio="50">ingredients</th>
-                <th st-ratio="5">Cost to make</th>
-                <th st-ratio="5">Sell Price</th>
-                <th st-ratio="5">Profit (%)</th>
+              <tr class="text-center">
+                <th class="text-center" st-ratio="1">Craftable Amount</th>
+                <th class="text-center" st-ratio="1">Min Rating</th>
+                <th class="text-center" st-ratio="15">Type</th>
+                <th class="text-center" st-ratio="5">Crafted Item</th>
+                <th class="text-center" st-ratio="5">disciplines</th>
+                <th class="text-center" st-ratio="60">ingredients</th>
+                <th class="text-center" st-ratio="5">Craft Cost</th>
+                <th class="text-center" st-ratio="5">Sell Price</th>
+                <th class="text-center" st-ratio="5">Profit (%)</th>
               </tr>
-              <th>
+<!--               <th>
                 <input st-search="craftable" placeholder="search craftable" class="input-sm form-control" type="search"/>
               </th>
               <th>
@@ -85,14 +86,16 @@
               </th>
               <th>
                 <input st-search="ingredients" placeholder="search count" class="input-sm form-control" type="search"/>
-              </th>
+              </th> -->
             </thead>
-            <tbody>
-              <tr ng-repeat="item in displayedCollection">
-                <td>{{ item.craftable }}</td>
+            <tbody ng-show="!isLoading()">
+              <tr class="text-center" ng-repeat="item in displayedCollection">
+                <td>{{ item.craftableAmount }}</td>
+                <!-- <td>{{ item.id }}</td> -->
                 <td>{{ item.min_rating }}</td>
-                <td>{{ item.type }}</td>
-                <td>{{ item.craftedItem }}</td>
+                <td>{{ item.type | stringify }}</td>
+                <!-- <td>{{ item.craftedItem }}</td> -->
+                <td><div ng-bind-html="idsToHtmlImgs(item.craftedItem)"></div></td>
                 <td><div ng-bind-html="idsToHtmlImgs(item.disciplines)"></div></td>
                 <td><div ng-bind-html="idsToHtmlImgs(item.ingredients)"></div></td>
                 <!-- <td>{{ item.ingredients }}</td> -->
@@ -101,20 +104,22 @@
                 <td>{{ item.profit }}</td>
               </tr>
             </tbody>
-          <tfoot>
+            <tbody ng-show="isLoading()" class="ng-hide">
+              <tr>
+                <td colspan="9" class="text-center"><div class="loader">Loading...</div></td>
+              </tr>
+            </tbody>
+          <tfoot ng-show="!isLoading()">
             <tr>
-              <td colspan="5" class="text-center">
+              <td colspan="9" class="text-center">
                 <div st-items-by-page="10" st-pagination="" st-template="js/vendors/smart-table/pagination.custom.html"></div>
               </td>
             </tr>
           </tfoot>
         </table>
       </div>
-      {{count}}
-<div ng-show="isLoading" class="loading-indicator"></div>
     </div>
   </div>
-
 
   <script src="js/vendors/tether.min.js"></script>
   <script src="js/vendors/jquery.min.js"></script>

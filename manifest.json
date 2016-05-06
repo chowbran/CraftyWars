@@ -20,10 +20,25 @@
     "fileSystem",
     "storage",
     "unlimitedStorage",
-    "https://render.guildwars2.com"
+    "https://render.guildwars2.com",
+    "webview"
   ],
   "content_security_policy": "script-src 'self' http://xxxx 'unsafe-inline'; object-src 'self'; img-src https://render.guildwars2.com;",
   "web_accessible_resources": [
     "bootstrap/fonts/*"
-  ]
+  ],
+  "commands": {
+    "pageLeft": {
+      "suggested_key": {
+        "default": "Ctrl+A" 
+      },
+      "description": "Go Left"
+    },
+    "pageRight": {
+      "suggested_key": {
+        "default": "Ctrl+D"
+      },
+      "description": "Go Right"
+    }
+  }
 }

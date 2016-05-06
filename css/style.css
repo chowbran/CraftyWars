@@ -1,17 +1,49 @@
-
-
-#datetime {
-  text-align: center;
+@font-face {
+    font-family: GWTwoFont;
+    src: url(font/GWTwoFont.tff);
 }
-#datetime h1 {
-  font-size: 6.1em;
+
+webview.icons {
+  width: 24px;
+  height: 24px;
 }
 
 img.icons {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
+}
+
+img.craftingIcons {
+  width: 22px;
+  height: 22px;
 }
 
 div.inline {
 	float:left;
+}
+
+
+a[hoverDetails]:hover:after {
+  content: attr(hoverDetails);
+  padding: 2px 4px;
+  font-size: 20px;
+  font-family: GWTwoFont;
+  background-color: rgba(60,60,60,.85);
+  position: absolute;
+  z-index: 1;
+  border-width: 3px;
+  -moz-border-width: 3px;
+  -webkit-border-width: 3px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  -moz-box-shadow: 0px 0px 4px #222;
+  -webkit-box-shadow: 0px 0px 4px #222;
+  box-shadow: 0px 0px 4px #222;
+/*  background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #eeeeee),color-stop(1, #cccccc));
+  background-image: -webkit-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -ms-linear-gradient(top, #eeeeee, #cccccc);
+  background-image: -o-linear-gradient(top, #eeeeee, #cccccc);*/
 }
