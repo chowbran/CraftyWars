@@ -159,12 +159,9 @@ app.service('utilities', function ($rootScope, RenderIds) {
 
   this.getIcon = function(iconId) {
     if (!!RenderIds[iconId]) {
-      // console.log($rootScope.gw2.icons);
       return $rootScope.gw2.icons[RenderIds[iconId]];
     } else if (!!$rootScope.gw2.icons[iconId]) {
       return $rootScope.gw2.icons[iconId];
-    // } else if (!!$rootScope.gw2.items[iconId]) {
-    //   return $rootScope.gw2.items[iconId]["icon"];
     } else {
       if (!!$rootScope.gw2.icons[iconId]) {
         return $rootScope.gw2.icons[iconId];
@@ -424,12 +421,7 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
 app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafting, endpoints, utilities, _, UserItems, RarityColourCode) {
   var apiKey = utilities.getApiKey();
   $scope.CONST = crafting;
-  $scope.selectedTypes = [].concat.apply([], Object.keys($scope.CONST.craftType).map((cls) => { 
-    return $scope.CONST.craftType[cls];
-  }));
   $scope.selectedTypeModels = jQuery.extend({}, $scope.CONST.craftType);
-  // $scope.selectedTypes = [];
-  // $scope.selectedTypeModels = {};
   $scope.selectedDisciplinesModel = $scope.CONST.crafts.map((craft) => {return craft["discipline"]; });
   $scope.recipes = $rootScope.gw2.recipes;
 
@@ -443,23 +435,16 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
       var img = utilities.getIcon(id);
       if (!!img) {
         if (!!$rootScope.gw2.items[id]) {
-          // var url = $rootScope.gw2.items[id]["icon"];
           var rarity = $rootScope.gw2.items[id]["rarity"]
 
           html = html + "<a style=\"color:" + RarityColourCode[rarity] + ";\" hoverDetails=\"" + hoverDetails(id, count) + "\"><img class=\"icons\" src=" + img + ">";
-          // html = html + "<a style=\"color:" + RarityColourCode[rarity] + ";\" hoverDetails=\"" + hoverDetails(id, count) + "\"><img class=\"icons\" src=" + img + ">";
-          // html = html + "<a style=\"color:" + RarityColourCode[rarity] + ";\" hoverDetails=\"" + hoverDetails(id, count) + "\"><webview partition=\"crafty\" class=\"icons\" width=\"32px\" height=\"32px\" src=\"" + img + "\"></webview>";
-          // html = html + "<a title=\"Hello World\"><img class=\"icons\"src=" + img + " title=\"" + $rootScope.gw2.items[id]["name"] + "\">";
         } else {
-          // html = html + "<a style=\"color:white;\" hoverDetails=\"" + hoverDetails(id) + "\"><img class=\"craftingIcons\" src=" + img + ">";
           html = html + "<a style=\"color:white;\" hoverDetails=\"" + hoverDetails(id) + "\"><img class=\"craftingIcons\" src=" + img + ">";
-          // html = html + "<a hoverDetails=\"<p>Hello  World\"><img class=\"craftingIcons\" src=" + img + ">";
         }
       }
     });
 
     html = html + "</div></a>"
-    // html = html + "</div>"
 
     return $sce.trustAsHtml(html);
   };
@@ -479,12 +464,17 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
     return res;
   }
 
-  var updatedcraftingList = function() {
+  var updateCraftingList = function() {
     var result = {};
 
-    $scope.recipes.forEach((recipe) => {
-      
-      result[recipe["id"]] = {
+    var selectedItemTypes = getSelectedTypes();
+
+    $scope.craftingList = $scope.recipes.filter((recipe) => {
+      return !_.isEmpty(_.intersection(recipe.disciplines, $scope.selectedDisciplinesModel));
+    }).filter((recipe) => {
+      return _.contains(recipe["type"], selectedItemTypes);
+    }).map((recipe) => {
+      return {
         "id": recipe["id"],
         "craftableAmount": calculateCraftableAmount(recipe["id"]),
         "min_rating": recipe["min_rating"],
@@ -501,12 +491,6 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
         "profit": 0
       }
     });
-
-    $scope.craftingList = Object.keys(result).map((recipeId) => {
-      return result[recipeId];
-    });
-
-
   };
 
   var calculateCraftableAmount = function(recipeId) {
@@ -519,7 +503,7 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
     var requiredItems = $scope.recipes[recipeId]["ingredients"].map((ingredient) => {
       return {"id": ingredient["item_id"].toString(), "count": ingredient["count"]};
     });
-    var requiredItemIds = requiredItems.map((item) => {return item["id"]; });
+    var requiredItemIds = requiredItems.map((item) => { return item["id"]; });
 
     var ownedItems = items.filter((item) => {
       return requiredItemIds.indexOf(item["id"]) >= 0;
@@ -549,22 +533,17 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
     return _.min(multiples);
   };
 
-  $scope.updateSelectedTypes = function () {
-    $scope.selectedTypes.length = 0;
-    Object.keys($scope.CONST.craftType).forEach((cls) => {
-      $scope.selectedTypes = 
-        _.union($scope.selectedTypes, $scope.selectedTypeModels[cls]);
-    });
-
-    console.log($scope.selectedTypes);
-    console.log($scope.selectedTypeModels);
-  };
+  var getSelectedTypes = function() {
+    return _.reduce(Object.keys($scope.selectedTypeModels).map((cls) => {
+      return $scope.selectedTypeModels[cls];
+    }), (memo, arr) => {
+      return _.union(memo, arr);
+    }, []);
+  }
 
   $scope.refresh = function() {
     $scope.recipes = $rootScope.gw2.recipes;
-    // $scope.items = UserItems.Inventory.getItemsByCharacter("Sylvar");
-    // $scope.items = UserItems.getItems();
-    updatedcraftingList();
+    updateCraftingList();
 
   // chrome.commands.onCommand.addListener((command) => {
   //   if (command === "pageLeft") {
@@ -580,6 +559,7 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
     console.log(requestsAlive());
 
     // console.log($scope.selectedDisciplinesModel);
+    console.log($scope.getSelectedTypes());
     // console.log($scope.selectedTypes);
     // console.log(UserItems.getItems());
     // console.log(UserItems.Bank.getItems());
