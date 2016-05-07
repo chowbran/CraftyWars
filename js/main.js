@@ -32,9 +32,9 @@ function httpGetAsync(url, callback) {
       requests = requests - 1;
     } else if (req.readyState == 4 && req.status == 206) {
       callback(req.responseText);
-      requests = requests - 1;
       // console.log(req.responseText);
-    }
+      requests = requests - 1;
+    } 
   };
   req.open("GET", url, true); // true for asynchronous
   // req.setRequestHeader("Range", "bytes=0-");

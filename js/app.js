@@ -30,10 +30,7 @@ app.run(function($rootScope, LoadGW2) {
     chrome.storage.local.get("itemIds", function(itemIds) {
       chrome.storage.local.get(itemIds["itemIds"], function(items) {
         if ((itemIds["itemIds"] === undefined) || (recipes["recipes"] === undefined)) {
-          chrome.storage.local.set({
-            "recipes": [],
-            "itemIds": []
-          }, () => {
+          chrome.storage.local.clear(() => {
             LoadGW2.fetchRecipesAndItems();
           });
           console.log("Fetched from server");
@@ -71,9 +68,6 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
           $rootScope.gw2.recipes = _.union($rootScope.gw2.recipes, arr);
 
           recipeItemIds = arr.map((recipe) => {
-            if (recipe["id"] === 11718) {
-              console.log(recipe);
-            }
             return recipe["ingredients"].map((ingredient) => {
               return ingredient["item_id"];
             });
@@ -83,9 +77,6 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
           recipeItemIds = [].concat.apply([], recipeItemIds);
 
           recipeItemIds = _.union(arr.map((recipe) => {
-            if (recipe["id"] === 11718) {
-              console.log(recipe);
-            }
             return recipe["output_item_id"];
           }), recipeItemIds);
 
@@ -136,7 +127,6 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
       iconInfoArr.forEach((iconInfo) => {
         httpGetBlobAsync(iconInfo["icon"], (res) => {
           $rootScope.gw2.icons[iconInfo["id"]] = window.URL.createObjectURL(res);
-          $rootScope.$digest();
         });
       });
     });
@@ -159,9 +149,12 @@ app.service('utilities', function ($rootScope, RenderIds) {
 
   this.getIcon = function(iconId) {
     if (!!RenderIds[iconId]) {
+      // console.log($rootScope.gw2.icons);
       return $rootScope.gw2.icons[RenderIds[iconId]];
     } else if (!!$rootScope.gw2.icons[iconId]) {
       return $rootScope.gw2.icons[iconId];
+    // } else if (!!$rootScope.gw2.items[iconId]) {
+    //   return $rootScope.gw2.items[iconId]["icon"];
     } else {
       if (!!$rootScope.gw2.icons[iconId]) {
         return $rootScope.gw2.icons[iconId];
@@ -380,7 +373,7 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
 });
 
 /***********************************************Main Controller****************************************/
-app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, LoadAccount) {
+app.controller('MainCtrl', function($scope, $rootScope, LoadGW2, endpoints, utilities, LoadAccount) {
   var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
   $scope.utils = {};
   $scope.items = [];
@@ -394,6 +387,7 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
     LoadAccount.updateBank();
     LoadAccount.updateCharacters();
     LoadAccount.updateMaterialStorage();
+    requests = 0;
   };
 
   $scope.saveLocal = function() {
@@ -406,13 +400,17 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
         console.log("save successful")
       });
     });
-  }
+  };
 
   $scope.clearLocal = function() {
     chrome.storage.local.clear(() => {
       console.log("Clear successful");
     });
-  }
+  };
+
+  $scope.reloadFromServer = function() {
+    LoadGW2.fetchRecipesAndItems();
+  };
 
   $scope.$watch('apiKey', $scope.updateUser);
 });
@@ -421,7 +419,9 @@ app.controller('MainCtrl', function($scope, $rootScope, endpoints, utilities, Lo
 app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafting, endpoints, utilities, _, UserItems, RarityColourCode) {
   var apiKey = utilities.getApiKey();
   $scope.CONST = crafting;
+
   $scope.selectedTypeModels = jQuery.extend({}, $scope.CONST.craftType);
+
   $scope.selectedDisciplinesModel = $scope.CONST.crafts.map((craft) => {return craft["discipline"]; });
   $scope.recipes = $rootScope.gw2.recipes;
 
@@ -472,7 +472,7 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
     $scope.craftingList = $scope.recipes.filter((recipe) => {
       return !_.isEmpty(_.intersection(recipe.disciplines, $scope.selectedDisciplinesModel));
     }).filter((recipe) => {
-      return _.contains(recipe["type"], selectedItemTypes);
+      return _.contains(selectedItemTypes, recipe["type"]);
     }).map((recipe) => {
       return {
         "id": recipe["id"],
@@ -542,9 +542,9 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
   }
 
   $scope.refresh = function() {
+    requests = 0;
     $scope.recipes = $rootScope.gw2.recipes;
     updateCraftingList();
-
   // chrome.commands.onCommand.addListener((command) => {
   //   if (command === "pageLeft") {
   //     stPagination.selectPage(stPagination.currentPage - 1);
@@ -559,7 +559,7 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
     console.log(requestsAlive());
 
     // console.log($scope.selectedDisciplinesModel);
-    console.log($scope.getSelectedTypes());
+    console.log(getSelectedTypes());
     // console.log($scope.selectedTypes);
     // console.log(UserItems.getItems());
     // console.log(UserItems.Bank.getItems());
@@ -585,6 +585,7 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, $compile, crafti
 
   $scope.isLoading = function() {
     var requests = requestsAlive();
+    console.log(requests);
     if (requests <= 0) {
       return false;
     } else {
