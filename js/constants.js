@@ -80,6 +80,8 @@ app.constant('endpoints', {
   authParam: "?access_token=", 
   idsParam: "?ids=",
   pageParam: "page=",
+  commerceListings: "commerce/listings",
+  commercePrices: "commerce/prices",
   files: "files",
   renderService: "https://render.guildwars2.com/file/signature/file_id.png",
   idsParamLimit: 200

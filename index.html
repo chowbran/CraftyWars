@@ -15,113 +15,83 @@
 
   <div class="col-lg-12">
     <div data-ng-controller="MainCtrl">
-      <input type="text" id="txtApiKey" ng-change="account.keyChange(account.apiKey)" class="form-control" placeholder="API Key" data-ng-model="account.apiKey"></input>
-      <p> {{ account.keyWarning }} </p>
-
-<!--       <div class="input-group">
-        <input type="text" id="txtSearch" class="form-control" placeholder="Search...">
+      <div class="input-group">
         <span class="input-group-btn">
-          <button data-ng-click="utils.updateView()" class="btn btn-secondary" id="btnSearch" type="button"><span class="glyphicon glyphicon-search"></span></button>
+          <button title="{{ account.keyWarning }}" data-ng-click="account.keyChange(account.apiKey)" class="btn btn-secondary" type="button">
+            <span style="color: {{ account.glyphColour }}" class="glyphicon {{ account.img }}"></span>
+          </button>
         </span>
-      </div> -->
+        <input type="text" id="txtApiKey" ng-change="account.keyChange(account.apiKey)" class="form-control" placeholder="API Key" data-ng-model="account.apiKey"></input>
+      </div>
       <hr>
-      <button data-ng-click="saveLocal()" class="btn btn-secondary" type="button">Save to local</button>
-      <button data-ng-click="reloadFromServer()" class="btn btn-secondary" type="button">Load from Server</button>
-      <button data-ng-click="clearLocal()" class="btn btn-secondary" type="button">Clear local</button>
-    </div>
-  </div>
+      <fieldset ng-disabled="!account.authenticated">
+        <button data-ng-click="account.saveLocal()" class="btn btn-secondary" type="button">Save to local</button>
+        <button data-ng-click="account.reloadFromServer()" class="btn btn-secondary" type="button">Load from Server</button>
+        <button data-ng-click="account.clearLocal()" class="btn btn-secondary" type="button">Clear local</button>
   
+        <div data-ng-controller="FilterCtrl">
+          <button data-ng-click="refresh()" class="btn btn-secondary" type="button">Refresh</button>
+          <form class="form-inline">
+            <div class="checkbox" data-ng-repeat="discipline in CONST.disciplines">
+              <input type="checkbox" checklist-model="selectedDisciplinesModel" checklist-value="discipline"> 
+                {{ discipline }} &nbsp;&nbsp; 
+              </input>
+            </div>
+            <div class="checkbox">
+              <input type="checkbox" data-ng-click="updateAllDisciplines($event)" data-ng-checked="isAllSelected()"> 
+                Select All
+              </input>
+            </div>
+          </form>
 
-  <div class="col-lg-12">
-    <div data-ng-controller="FilterCtrl">
-      <button data-ng-click="test1()" class="btn btn-secondary" type="button">Debug</button>
-      <button data-ng-click="refresh()" class="btn btn-secondary" type="button">Refresh</button>
-      <form class="form-inline">
-        <div class="checkbox" data-ng-repeat="discipline in CONST.disciplines">
-          <input type="checkbox" checklist-model="selectedDisciplinesModel" checklist-value="discipline"> 
-            {{ discipline }} &nbsp;&nbsp; 
-          </input>
+          <div class="inline" data-ng-repeat="class in CONST.craftClass">
+            <label>&nbsp;&nbsp;  {{class | capitalize }}:  </label>
+            <multiselect data-ng-model="selectedTypeModels[class]" options="(t | stringify) for t in CONST.craftType[class]" data-multiple="true" scroll-after-rows="10" filter-after-rows="10" max-width="100">
+            </multiselect>
+
+          </div>
+
+          <br>
+          <div>
+            <table st-safe-src="craftingList" st-table="displayedCollection" class="table table-striped">
+                <thead>
+                  <tr>
+                    <th st-sort="craftableAmount" st-ratio="1">Craftable Amount</th>
+                    <th st-sort="min_rating" st-ratio="1">Min Rating</th>
+                    <th st-sort="type" st-ratio="15">Type</th>
+                    <th st-ratio="5">Crafted Item</th>
+                    <th st-ratio="5">disciplines</th>
+                    <th st-ratio="60">ingredients</th>
+                  </tr>
+                </thead>
+                <tbody ng-show="!isLoading()">
+                  <tr ng-repeat="item in displayedCollection">
+                    <td>{{ item.craftableAmount }}</td>
+                    <td>{{ item.min_rating }}</td>
+                    <td>{{ item.type | stringify }}</td>
+                    <td><div ng-bind-html="idsToHtmlImgs(item.craftedItem)"></div></td>
+                    <td><div ng-bind-html="idsToHtmlImgs(item.disciplines)"></div></td>
+                    <td><div ng-bind-html="idsToHtmlImgs(item.ingredients)"></div></td>
+                  </tr>
+                </tbody>
+                <tbody ng-show="isLoading()" class="ng-hide">
+                  <tr>
+                    <td colspan="9" class="text-center"><div class="loader">Loading...</div></td>
+                  </tr>
+                </tbody>
+              <tfoot ng-show="!isLoading()">
+                <tr>
+                  <td colspan="9" class="text-center">
+                    <div st-items-by-page="10" st-pagination="" st-template="js/vendors/smart-table/pagination.custom.html"></div>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-        <div class="checkbox">
-          <input type="checkbox" data-ng-click="updateAllDisciplines($event)" data-ng-checked="isAllSelected()"> 
-            Select All
-          </input>
-        </div>
-      </form>
-
-      <div class="inline" data-ng-repeat="class in CONST.craftClass">
-        <label>&nbsp;&nbsp;  {{class | capitalize }}:  </label>
-        <multiselect data-ng-model="selectedTypeModels[class]" options="(t | stringify) for t in CONST.craftType[class]" data-multiple="true" scroll-after-rows="10" filter-after-rows="10" max-width="100">
-        </multiselect>
-
-      </div>
-
-      <br>
-      <div>
-        <table st-safe-src="craftingList" st-table="displayedCollection" class="table table-striped">
-            <thead>
-              <tr class="text-center">
-                <th class="text-center" st-ratio="1">Craftable Amount</th>
-                <th class="text-center" st-ratio="1">Min Rating</th>
-                <th class="text-center" st-ratio="15">Type</th>
-                <th class="text-center" st-ratio="5">Crafted Item</th>
-                <th class="text-center" st-ratio="5">disciplines</th>
-                <th class="text-center" st-ratio="60">ingredients</th>
-                <th class="text-center" st-ratio="5">Craft Cost</th>
-                <th class="text-center" st-ratio="5">Sell Price</th>
-                <th class="text-center" st-ratio="5">Profit (%)</th>
-              </tr>
-<!--               <th>
-                <input st-search="craftable" placeholder="search craftable" class="input-sm form-control" type="search"/>
-              </th>
-              <th>
-                <input st-search="min_rating" placeholder="search rating" class="input-sm form-control" type="search"/>
-              </th>
-              <th>
-                <input st-search="type" placeholder="search type" class="input-sm form-control" type="search"/>
-              </th>
-              <th>
-                <input st-search="craftedItem" placeholder="search item" class="input-sm form-control" type="search"/>
-              </th>
-              <th>
-                <input st-search="disciplines" placeholder="search discipline" class="input-sm form-control" type="search"/>
-              </th>
-              <th>
-                <input st-search="ingredients" placeholder="search count" class="input-sm form-control" type="search"/>
-              </th> -->
-            </thead>
-            <tbody ng-show="!isLoading()">
-              <tr class="text-center" ng-repeat="item in displayedCollection">
-                <td>{{ item.craftableAmount }}</td>
-                <!-- <td>{{ item.id }}</td> -->
-                <td>{{ item.min_rating }}</td>
-                <td>{{ item.type | stringify }}</td>
-                <!-- <td>{{ item.craftedItem }}</td> -->
-                <td><div ng-bind-html="idsToHtmlImgs(item.craftedItem)"></div></td>
-                <td><div ng-bind-html="idsToHtmlImgs(item.disciplines)"></div></td>
-                <td><div ng-bind-html="idsToHtmlImgs(item.ingredients)"></div></td>
-                <!-- <td>{{ item.ingredients }}</td> -->
-                <td>{{ item.craftCost }}</td>
-                <td>{{ item.sellPrice }}</td>
-                <td>{{ item.profit }}</td>
-              </tr>
-            </tbody>
-            <tbody ng-show="isLoading()" class="ng-hide">
-              <tr>
-                <td colspan="9" class="text-center"><div class="loader">Loading...</div></td>
-              </tr>
-            </tbody>
-          <tfoot ng-show="!isLoading()">
-            <tr>
-              <td colspan="9" class="text-center">
-                <div st-items-by-page="10" st-pagination="" st-template="js/vendors/smart-table/pagination.custom.html"></div>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {{ counter }}
+      </fieldset>
     </div>
+
   </div>
 
   <script src="js/vendors/tether.min.js"></script>
@@ -129,7 +99,7 @@
   <script src="bootstrap/js/bootstrap.min.js"></script>
   <script src="js/vendors/angular.min.js"></script>
   <script src="js/vendors/smart-table/smart-table.min.js"></script>
-  <script src="js/vendors/underscore-min.js"></script>-
+  <script src="js/vendors/underscore-min.js"></script>
   <script src="js/vendors/checklist-model.js"></script>
   <script src="js/vendors/angular-bootstrap-multiselect.js"></script>
   <script src="js/vendors/lrInfiniteScrollPlugin.js"></script>

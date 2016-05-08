@@ -81,13 +81,13 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
             return recipe["output_item_id"];
           }), recipeItemIds);
 
-          fetchItemsById(recipeItemIds);
+          this.fetchItemsById(recipeItemIds);
         });
       });
     });
   };
 
-  var fetchItemsById = function(itemIds) {
+  this.fetchItemsById = function(itemIds) {
 
     var baseQuery = endpoints.v2Url + endpoints.items;
 
@@ -130,10 +130,10 @@ app.service('LoadGW2', function($rootScope, endpoints, crafting, RenderIds, Reve
         });
       });
     });
-
-
-    $rootScope.gw2.icons["map_crafting_scribe"] = scribeBase64["icon"]
+    $rootScope.gw2.icons["map_crafting_scribe"] = scribeBase64["icon"];
   };
+
+
 });
 
 app.service('utilities', function ($rootScope, RenderIds) {
@@ -149,12 +149,9 @@ app.service('utilities', function ($rootScope, RenderIds) {
 
   this.getIcon = function(iconId) {
     if (!!RenderIds[iconId]) {
-      // console.log($rootScope.gw2.icons);
       return $rootScope.gw2.icons[RenderIds[iconId]];
     } else if (!!$rootScope.gw2.icons[iconId]) {
       return $rootScope.gw2.icons[iconId];
-    // } else if (!!$rootScope.gw2.items[iconId]) {
-    //   return $rootScope.gw2.items[iconId]["icon"];
     } else {
       if (!!$rootScope.gw2.icons[iconId]) {
         return $rootScope.gw2.icons[iconId];
@@ -376,8 +373,11 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
 app.controller('MainCtrl', function($scope, $rootScope, LoadGW2, endpoints, utilities, LoadAccount, AppProperties) {
   var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
   $scope.account = {}
-  $scope.account.keyWarning = "";
+  $scope.account.keyWarning = "Valid Key";
   $scope.account.apiKey = temp_key;
+  $scope.account.authenticated = true;
+  $scope.account.img = "glyphicon-ok";
+  $scope.account.glyphColour = "green";
 
   var KeyStatus = {
     VALID: 0,
@@ -396,7 +396,6 @@ app.controller('MainCtrl', function($scope, $rootScope, LoadGW2, endpoints, util
   var checkPermissions = function(apiKey, onSuccess, onFailure) {
     var query = endpoints.v2Url + endpoints.tokenInfo;
     query += endpoints.authParam + apiKey;
-
 
     httpGetAsync(query, (res) => {
       var tokenInfo = $.parseJSON(res);
@@ -421,19 +420,26 @@ app.controller('MainCtrl', function($scope, $rootScope, LoadGW2, endpoints, util
     }, () => { 
       keyError(KeyStatus.INVALID);
     });
-
-
   };
 
   var keyError = function(status) {
     switch (status) {
       case KeyStatus.VALID:
-        $scope.account.keyWarning = "";
+        $scope.account.glyphColour = "green";
+        $scope.account.img = "glyphicon-ok";
+        $scope.account.authenticated = true;
+        $scope.account.keyWarning = "Valid Key";
         break;
       case KeyStatus.INVALID:
+        $scope.account.glyphColour = "red";
+        $scope.account.img = "glyphicon-remove";
+        $scope.account.authenticated = false;
         $scope.account.keyWarning = "Invalid Key";
         break;
       case KeyStatus.MISSING_PERMISSIONS:
+        $scope.account.glyphColour = "yellow";
+        $scope.account.img = "glyphicon-warning-sign";
+        $scope.account.authenticated = false;
         $scope.account.keyWarning = "Missing Permissions";
         break;
     }
@@ -442,6 +448,7 @@ app.controller('MainCtrl', function($scope, $rootScope, LoadGW2, endpoints, util
   }
 
   var updateUser = function(apiKey) {
+    console.log("Updating user")
     utilities.setApiKey(apiKey);
 
     LoadAccount.updateBank();
@@ -471,6 +478,8 @@ app.controller('MainCtrl', function($scope, $rootScope, LoadGW2, endpoints, util
   $scope.account.reloadFromServer = function() {
     LoadGW2.fetchRecipesAndItems();
   };
+
+  $scope.account.keyChange($scope.account.apiKey);
 });
 
 /************************Filter Controller*************************************/
@@ -507,7 +516,6 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, crafting, endpoi
     return $sce.trustAsHtml(html);
   };
 
-
   function hoverDetails(id, count) {
     var res = "";
     if (!!$rootScope.gw2.items[id]) {
@@ -543,17 +551,13 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, crafting, endpoi
         }),
         "ingredients": recipe["ingredients"].map((item) => {
           return {"id" : item["item_id"], "count" : item["count"]};
-        }),
-        "craftCost": 0,
-        "sellPrice": 0,
-        "profit": 0
+        })
       }
     });
   };
 
   var calculateCraftableAmount = function(recipeId) {
     var items = UserItems.getItems();
-
     if (!$scope.recipes[recipeId]) {
       return 0; 
     }
@@ -603,26 +607,6 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, crafting, endpoi
     requests = 0;
     $scope.recipes = $rootScope.gw2.recipes;
     updateCraftingList();
-  // chrome.commands.onCommand.addListener((command) => {
-  //   if (command === "pageLeft") {
-  //     stPagination.selectPage(stPagination.currentPage - 1);
-  //   } else if (command === "pageRight") {
-  //     stPagination.selectPage(stPagination.currentPage - 1);
-  //   }
-  // });
-
-  };
-
-  $scope.test1 = function() {
-    console.log(requestsAlive());
-
-    // console.log($scope.selectedDisciplinesModel);
-    console.log(getSelectedTypes());
-    // console.log($scope.selectedTypes);
-    // console.log(UserItems.getItems());
-    // console.log(UserItems.Bank.getItems());
-    // console.log(UserItems.Inventory.getItems());
-    // console.log(UserItems.MaterialStorage.getItems());
   };
 
   $scope.updateAllDisciplines = function($event) {
@@ -641,32 +625,13 @@ app.controller('FilterCtrl', function($scope, $sce, $rootScope, crafting, endpoi
     return $scope.CONST.disciplines.length === $scope.selectedDisciplinesModel.length;
   };
 
-  // $scope.counter = 0;
-  // var mytimeout = $timeout($scope.onTimeout,2000000);
-  // $scope.onTimeout = function(){
-  //   var foo = 1 + 2;
-  //     // console.log("Timeout")
-  //     $scope.counter++;
-  //     if (requests > 0) {
-  //       requests = 0;
-  //     }
-  //     mytimeout = $timeout($scope.onTimeout,2000000);
-  // }
-
-  // $scope.stop = function(){
-  //     $timeout.cancel(mytimeout);
-  // }
-
   $scope.isLoading = function() {
     var requests = requestsAlive();
-    console.log(requests);
     if (requests <= 0) {
       return false;
     } else {
       return true;
     }
   };
-
-  // $scope.onTimeout()
 });
 

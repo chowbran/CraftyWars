@@ -2,8 +2,8 @@
   "manifest_version": 2,
   "name": "CraftyWars",
   "short_name": "CW",
-  "description": "",
-  "version": "0.0.1",
+  "description": "A crafting calculator for Guild Wars 2. Enter your API key and this tool will calculate which recipes are craftable.",
+  "version": "0.1.0",
   "minimum_chrome_version": "38",
   "icons": {
     "16": "img/icon_16.png",
@@ -26,19 +26,5 @@
   "content_security_policy": "script-src 'self' http://xxxx 'unsafe-inline'; object-src 'self'; img-src https://render.guildwars2.com;",
   "web_accessible_resources": [
     "bootstrap/fonts/*"
-  ],
-  "commands": {
-    "pageLeft": {
-      "suggested_key": {
-        "default": "Ctrl+A" 
-      },
-      "description": "Go Left"
-    },
-    "pageRight": {
-      "suggested_key": {
-        "default": "Ctrl+D"
-      },
-      "description": "Go Right"
-    }
-  }
+  ]
 }

@@ -8,6 +8,17 @@ webview.icons {
   height: 24px;
 }
 
+.st-sort-ascent:after {
+    content: '\25B2';
+}
+.st-sort-descent:after {
+    content: '\25BC';
+}
+
+span.green {
+  background-color: green;
+}
+
 img.icons {
   width: 24px;
   height: 24px;
@@ -30,7 +41,7 @@ a[hoverDetails]:hover:after {
   font-family: GWTwoFont;
   background-color: rgba(60,60,60,.85);
   position: absolute;
-  z-index: 1;
+  z-index: 100;
   border-width: 3px;
   -moz-border-width: 3px;
   -webkit-border-width: 3px;
