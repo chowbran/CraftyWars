@@ -15,7 +15,8 @@
 
   <div class="col-lg-12">
     <div data-ng-controller="MainCtrl">
-      <input type="text" id="txtApiKey" class="form-control" placeholder="API Key" data-ng-model="apiKey"></input>
+      <input type="text" id="txtApiKey" ng-change="account.keyChange(account.apiKey)" class="form-control" placeholder="API Key" data-ng-model="account.apiKey"></input>
+      <p> {{ account.keyWarning }} </p>
 
 <!--       <div class="input-group">
         <input type="text" id="txtSearch" class="form-control" placeholder="Search...">
@@ -36,9 +37,9 @@
       <button data-ng-click="test1()" class="btn btn-secondary" type="button">Debug</button>
       <button data-ng-click="refresh()" class="btn btn-secondary" type="button">Refresh</button>
       <form class="form-inline">
-        <div class="checkbox" data-ng-repeat="craft in CONST.crafts">
-          <input type="checkbox" checklist-model="selectedDisciplinesModel" checklist-value="craft.discipline"> 
-            {{ craft.discipline }} &nbsp;&nbsp; 
+        <div class="checkbox" data-ng-repeat="discipline in CONST.disciplines">
+          <input type="checkbox" checklist-model="selectedDisciplinesModel" checklist-value="discipline"> 
+            {{ discipline }} &nbsp;&nbsp; 
           </input>
         </div>
         <div class="checkbox">
@@ -119,6 +120,7 @@
           </tfoot>
         </table>
       </div>
+      {{ counter }}
     </div>
   </div>
 

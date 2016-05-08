@@ -21,7 +21,11 @@ function requestsAlive() {
   return requests;
 }
 
-function httpGetAsync(url, callback) {
+function resetRequests() {
+  requests = 0;
+}
+
+function httpGetAsync(url, callback, onFailure) {
   requests = requests + 1;
   var req = new XMLHttpRequest();
         
@@ -34,7 +38,11 @@ function httpGetAsync(url, callback) {
       callback(req.responseText);
       // console.log(req.responseText);
       requests = requests - 1;
-    } 
+    }  else if (req.readyState == 4 && req.status == 403) {
+      if (!!onFailure) {
+        onFailure(req.responseText);
+      }
+    }
   };
   req.open("GET", url, true); // true for asynchronous
   // req.setRequestHeader("Range", "bytes=0-");

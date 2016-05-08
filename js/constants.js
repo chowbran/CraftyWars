@@ -1,14 +1,14 @@
 app.constant('crafting', {
-  crafts: [
-    {"discipline": "Armorsmith"},
-    {"discipline": "Artificer"},
-    {"discipline": "Chef"},
-    {"discipline": "Huntsman"},
-    {"discipline": "Jeweler"},
-    {"discipline": "Leatherworker"},
-    {"discipline": "Scribe"},
-    {"discipline": "Tailor"},
-    {"discipline": "Weaponsmith"}
+  disciplines: [
+    "Armorsmith",
+    "Artificer",
+    "Chef",
+    "Huntsman",
+    "Jeweler",
+    "Leatherworker",
+    "Scribe",
+    "Tailor",
+    "Weaponsmith"
   ],
   craftClass: ["weapon", "armor", "trinket", "food", "component", "refinement", "guild", "other"],
   craftType: {
@@ -67,10 +67,12 @@ app.constant('RarityColourCode', {
 app.constant('endpoints', {
   v1Url: "https://api.guildwars2.com/v1/",
   v2Url: "https://api.guildwars2.com/v2/",
+  account: "account",
   accountMaterials: "account/materials",
   accountBank: "account/bank",
   accountInventory: "account/inventory",
   accountWallet: "account/wallet",
+  tokenInfo: "tokeninfo",
   characters: "characters",
   items: "items",
   recipes: "recipes",
@@ -81,4 +83,8 @@ app.constant('endpoints', {
   files: "files",
   renderService: "https://render.guildwars2.com/file/signature/file_id.png",
   idsParamLimit: 200
+});
+
+app.constant("AppProperties", {
+  requiredPermissions: ["account", "characters", "inventories", "tradingpost"]
 });
