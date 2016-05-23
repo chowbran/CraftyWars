@@ -371,10 +371,9 @@ app.service("LoadAccount", function($rootScope, utilities, endpoints, UserItems)
 
 /***********************************************Main Controller****************************************/
 app.controller('MainCtrl', function($scope, $rootScope, LoadGW2, endpoints, utilities, LoadAccount, AppProperties) {
-  var temp_key = "7B3452F9-F497-6A46-B8DF-FB0C0126853E6C9B3BB0-8788-484D-B465-A4FF112F9789";
   $scope.account = {}
   $scope.account.keyWarning = "Valid Key";
-  $scope.account.apiKey = temp_key;
+  $scope.account.apiKey;
   $scope.account.authenticated = true;
   $scope.account.img = "glyphicon-ok";
   $scope.account.glyphColour = "green";
