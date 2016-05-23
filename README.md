@@ -10,7 +10,7 @@ You can also install the App from the pre-packaged copy provided in the /dist/ d
 ## Usage
 
 Launch the app. You will encounter the following screen. You will need to wait a few seconds for the app to load information from ArenaNet's servers.
-(https://github.com/chowbran/CraftyWars/dist/Images/1.PNG)
+(https://github.com/chowbran/CraftyWars/tree/master/dist/Images/1.PNG)
 
 Enter your account API key provided to you from the GW2 website [here](https://account.arena.net/login?redirect_uri=%2Fapplications).
 
@@ -20,10 +20,10 @@ To prevent long load times in the next launch, click the "Save to local" button.
 To start your search, choose the crafting professions and the item types you would like to filter by. 
 
 Click "Refresh" you are ready.
-(https://github.com/chowbran/CraftyWars/dist/Images/2.PNG)
+(https://github.com/chowbran/CraftyWars/tree/master/dist/Images/2.PNG)
 
 You can hover over the icons to display the resulting items and the ingredients for that item.
-(https://github.com/chowbran/CraftyWars/dist/Images/3.PNG)
+(https://github.com/chowbran/CraftyWars/tree/master/dist/Images/3.PNG)
 
 ## API Key Specifications
 Crafty Wars requires the following permissions in the API Key.
